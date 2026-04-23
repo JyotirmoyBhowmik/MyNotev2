@@ -66,7 +66,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       updated_at: Date.now()
     };
 
-    const { pages, blocks } = get();
+
 
     await db.transaction('rw', db.pages, db.blocks, async () => {
       await db.blocks.add(newBlock);

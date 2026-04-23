@@ -1,32 +1,67 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
+
+interface Profile {
+  id: string;
+  email: string;
+  role: 'pending' | 'approved' | 'admin';
+}
 
 interface AuthState {
-  user: any | null;
+  user: User | null;
+  profile: Profile | null;
   loading: boolean;
-  checkSession: () => Promise<void>;
+  initAuth: () => void;
   signOut: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: { id: 'local-user', email: 'test@local.dev' },
-  loading: false,
-  checkSession: async () => {
-    const isMock = !import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://placeholder.supabase.co';
-    if (isMock) {
-        set({ user: { id: 'local-user', email: 'local@dev' }, loading: false });
-        return;
-    }
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      set({ user: session?.user || null, loading: false });
-    } catch (e) {
-      console.warn("Supabase not fully configured yet, bypassing auth for local dev.");
-      set({ user: { id: 'local-user' }, loading: false });
-    }
+  user: null,
+  profile: null,
+  loading: true,
+
+  initAuth: () => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        set({ user: session.user });
+        fetchProfile(session.user.id, set);
+      } else {
+        set({ user: null, profile: null, loading: false });
+      }
+    });
+
+    // Listen for auth changes
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        set({ user: session.user, loading: true });
+        fetchProfile(session.user.id, set);
+      } else {
+        set({ user: null, profile: null, loading: false });
+      }
+    });
   },
+
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null });
+    set({ user: null, profile: null });
   }
 }));
+
+async function fetchProfile(userId: string, set: any) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (data) {
+    set({ profile: data, loading: false });
+  } else {
+    console.error('Error fetching profile', error);
+    // Profile might not be created immediately due to trigger delay, 
+    // or RLS prevents reading it if something is wrong.
+    set({ profile: { id: userId, email: '', role: 'pending' }, loading: false });
+  }
+}

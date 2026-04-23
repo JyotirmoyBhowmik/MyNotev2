@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import './Login.css';
 
@@ -9,7 +8,6 @@ export const Login: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { checkSession } = useAuthStore();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,20 +17,13 @@ export const Login: React.FC = () => {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert('Check your email for the login link!');
+        alert('Check your email for the login link! Or if email confirmation is off, you can log in.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await checkSession();
       }
     } catch (err: any) {
-      if (err.message.includes('FetchError') || err.message.includes('URL is required')) {
-          // Fallback for local development if Supabase isn't configured
-          console.warn("Supabase not configured, bypassing login for local dev");
-          await checkSession();
-      } else {
-          setError(err.message || 'An error occurred during authentication.');
-      }
+      setError(err.message || 'An error occurred during authentication.');
     } finally {
       setLoading(false);
     }

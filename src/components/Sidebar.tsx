@@ -4,7 +4,12 @@ import { useAuthStore } from '../store/authStore';
 import { LogOut, FileText, Plus } from 'lucide-react';
 import './Sidebar.css';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onOpenAdmin: () => void;
+  isAdmin: boolean;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const { pages, activePageId, setActivePage, createPage } = useGraphStore();
   const { signOut, user } = useAuthStore();
 
@@ -45,6 +50,11 @@ export const Sidebar: React.FC = () => {
         <button className="sidebar-btn" onClick={handleCreatePage}>
           <Plus size={16} /> New Page
         </button>
+        {isAdmin && (
+          <button className="sidebar-btn" onClick={onOpenAdmin} style={{ marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
+            Admin Panel
+          </button>
+        )}
       </div>
 
       <div className="sidebar-footer">

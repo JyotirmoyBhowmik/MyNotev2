@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { db, type Block, type Page } from '../lib/db';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from './authStore';
 import { v4 as uuidv4 } from 'uuid';
 
 interface GraphState {
@@ -25,6 +27,25 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   loading: true,
 
   loadGraph: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    try {
+      const { data: cloudPages } = await supabase.from('pages').select('*').eq('user_id', user.id);
+      const { data: cloudBlocks } = await supabase.from('blocks').select('*').eq('user_id', user.id);
+
+      if (cloudPages && cloudBlocks) {
+        await db.transaction('rw', db.pages, db.blocks, async () => {
+          await db.pages.clear();
+          await db.blocks.clear();
+          await db.pages.bulkAdd(cloudPages);
+          await db.blocks.bulkAdd(cloudBlocks);
+        });
+      }
+    } catch (e) {
+      console.error("Cloud sync failed, loading from local cache", e);
+    }
+
     const allPages = await db.pages.toArray();
     const allBlocks = await db.blocks.toArray();
 
@@ -35,8 +56,10 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   createPage: async (title, type = 'normal') => {
+    const user = useAuthStore.getState().user;
     const newPage: Page = {
       id: uuidv4(),
+      user_id: user?.id || '',
       title,
       type,
       root_blocks: [],
@@ -44,6 +67,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       updated_at: Date.now()
     };
     await db.pages.add(newPage);
+    await supabase.from('pages').insert(newPage);
+
     set(state => ({
       pages: { ...state.pages, [newPage.id]: newPage }
     }));
@@ -55,8 +80,10 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   addBlock: async (pageId, parentId, index, content = '') => {
+    const user = useAuthStore.getState().user;
     const newBlock: Block = {
       uuid: uuidv4(),
+      user_id: user?.id || '',
       content,
       parent_id: parentId,
       children: [],
@@ -66,7 +93,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       updated_at: Date.now()
     };
 
-
+    let parentUpdatePromise;
+    let pageUpdatePromise;
 
     await db.transaction('rw', db.pages, db.blocks, async () => {
       await db.blocks.add(newBlock);
@@ -77,6 +105,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           parent.children.splice(index, 0, newBlock.uuid);
           parent.updated_at = Date.now();
           await db.blocks.put(parent);
+          parentUpdatePromise = supabase.from('blocks').update({ children: parent.children, updated_at: parent.updated_at }).eq('uuid', parent.uuid);
         }
       } else {
         const page = await db.pages.get(pageId);
@@ -84,9 +113,15 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           page.root_blocks.splice(index, 0, newBlock.uuid);
           page.updated_at = Date.now();
           await db.pages.put(page);
+          pageUpdatePromise = supabase.from('pages').update({ root_blocks: page.root_blocks, updated_at: page.updated_at }).eq('id', page.id);
         }
       }
     });
+
+    // Cloud sync
+    await supabase.from('blocks').insert(newBlock);
+    if (parentUpdatePromise) await parentUpdatePromise;
+    if (pageUpdatePromise) await pageUpdatePromise;
 
     set(state => {
       const nextBlocks = { ...state.blocks, [newBlock.uuid]: newBlock };
@@ -117,6 +152,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     
     const updated = { ...block, content, updated_at: Date.now() };
     await db.blocks.put(updated);
+    await supabase.from('blocks').update({ content, updated_at: updated.updated_at }).eq('uuid', uuid);
     
     set(state => ({
       blocks: { ...state.blocks, [uuid]: updated }
@@ -124,40 +160,51 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   deleteBlock: async (uuid) => {
-    const { blocks, pages, activePageId } = get();
+    const { blocks, activePageId } = get();
     const block = blocks[uuid];
     if (!block) return;
 
+    const idsToDelete: string[] = [];
+    let parentUpdatePromise;
+    let pageUpdatePromise;
+
     await db.transaction('rw', db.pages, db.blocks, async () => {
-      // 1. recursively delete children
       const deleteRecursive = async (id: string) => {
         const b = blocks[id];
         if (!b) return;
         for (const childId of b.children) {
           await deleteRecursive(childId);
         }
+        idsToDelete.push(id);
         await db.blocks.delete(id);
       };
       
       await deleteRecursive(uuid);
 
-      // 2. remove from parent or page
       if (block.parent_id) {
-        const parent = blocks[block.parent_id];
+        const parent = await db.blocks.get(block.parent_id);
         if (parent) {
           parent.children = parent.children.filter(c => c !== uuid);
           await db.blocks.put(parent);
+          parentUpdatePromise = supabase.from('blocks').update({ children: parent.children }).eq('uuid', parent.uuid);
         }
       } else if (activePageId) {
-        const page = pages[activePageId];
+        const page = await db.pages.get(activePageId);
         if (page) {
           page.root_blocks = page.root_blocks.filter(c => c !== uuid);
           await db.pages.put(page);
+          pageUpdatePromise = supabase.from('pages').update({ root_blocks: page.root_blocks }).eq('id', page.id);
         }
       }
     });
 
-    // Update state
+    // Cloud sync
+    if (idsToDelete.length > 0) {
+      await supabase.from('blocks').delete().in('uuid', idsToDelete);
+    }
+    if (parentUpdatePromise) await parentUpdatePromise;
+    if (pageUpdatePromise) await pageUpdatePromise;
+
     set(state => {
       const nextBlocks = { ...state.blocks };
       const nextPages = { ...state.pages };
@@ -189,7 +236,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   moveBlock: async (_uuid, _newParentId, _newIndex) => {
-      // Stub for future
+      // Stub
   },
   
   indentBlock: async (uuid) => {
@@ -205,40 +252,42 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       const previousSibling = blocks[previousSiblingId];
       if (!previousSibling) return;
       
-      // Update DB
+      const syncPromises: any[] = [];
+
       await db.transaction('rw', db.pages, db.blocks, async () => {
-          // Remove from old parent array
           if (block.parent_id) {
               const oldParent = await db.blocks.get(block.parent_id);
               if (oldParent) {
                   oldParent.children = oldParent.children.filter(id => id !== uuid);
                   await db.blocks.put(oldParent);
+                  syncPromises.push(supabase.from('blocks').update({ children: oldParent.children }).eq('uuid', oldParent.uuid));
               }
           } else {
               const oldPage = await db.pages.get(block.page_id);
               if (oldPage) {
                   oldPage.root_blocks = oldPage.root_blocks.filter(id => id !== uuid);
                   await db.pages.put(oldPage);
+                  syncPromises.push(supabase.from('pages').update({ root_blocks: oldPage.root_blocks }).eq('id', oldPage.id));
               }
           }
           
-          // Add to new parent array
           previousSibling.children.push(uuid);
           await db.blocks.put(previousSibling);
+          syncPromises.push(supabase.from('blocks').update({ children: previousSibling.children }).eq('uuid', previousSibling.uuid));
           
-          // Update block's parent_id
           block.parent_id = previousSiblingId;
           await db.blocks.put(block);
+          syncPromises.push(supabase.from('blocks').update({ parent_id: previousSiblingId }).eq('uuid', block.uuid));
       });
       
-      // We can just call loadGraph here for simplicity in this prototype, or carefully update local state
+      await Promise.all(syncPromises);
       get().loadGraph();
   },
   
   outdentBlock: async (uuid) => {
       const { blocks } = get();
       const block = blocks[uuid];
-      if (!block || !block.parent_id) return; // Cannot outdent if no parent
+      if (!block || !block.parent_id) return;
       
       const currentParent = blocks[block.parent_id];
       const grandParentId = currentParent.parent_id;
@@ -246,26 +295,27 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       const indexInParent = currentParent.children.indexOf(uuid);
       const followingSiblings = currentParent.children.slice(indexInParent + 1);
       
+      const syncPromises: any[] = [];
+
       await db.transaction('rw', db.pages, db.blocks, async () => {
-          // Remove from current parent
           currentParent.children = currentParent.children.slice(0, indexInParent);
           await db.blocks.put(currentParent);
+          syncPromises.push(supabase.from('blocks').update({ children: currentParent.children }).eq('uuid', currentParent.uuid));
           
-          // Children that were below this block now become its children (Logseq style)
           block.children = [...block.children, ...followingSiblings];
           
-          // Update parent references of following siblings
           for (const sibId of followingSiblings) {
               const sib = await db.blocks.get(sibId);
               if (sib) {
                   sib.parent_id = uuid;
                   await db.blocks.put(sib);
+                  syncPromises.push(supabase.from('blocks').update({ parent_id: uuid }).eq('uuid', sib.uuid));
               }
           }
           
-          // Add to grandparent
           block.parent_id = grandParentId;
           await db.blocks.put(block);
+          syncPromises.push(supabase.from('blocks').update({ parent_id: grandParentId, children: block.children }).eq('uuid', block.uuid));
           
           if (grandParentId) {
               const grandParent = await db.blocks.get(grandParentId);
@@ -273,6 +323,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
                   const parentIndexInGrandparent = grandParent.children.indexOf(currentParent.uuid);
                   grandParent.children.splice(parentIndexInGrandparent + 1, 0, uuid);
                   await db.blocks.put(grandParent);
+                  syncPromises.push(supabase.from('blocks').update({ children: grandParent.children }).eq('uuid', grandParent.uuid));
               }
           } else {
               const page = await db.pages.get(block.page_id);
@@ -280,10 +331,12 @@ export const useGraphStore = create<GraphState>((set, get) => ({
                   const parentIndexInPage = page.root_blocks.indexOf(currentParent.uuid);
                   page.root_blocks.splice(parentIndexInPage + 1, 0, uuid);
                   await db.pages.put(page);
+                  syncPromises.push(supabase.from('pages').update({ root_blocks: page.root_blocks }).eq('id', page.id));
               }
           }
       });
       
+      await Promise.all(syncPromises);
       get().loadGraph();
   }
 }));

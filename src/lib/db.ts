@@ -6,6 +6,7 @@ export interface Block {
   parent_id: string | null;
   children: string[];
   page_id: string;
+  user_id: string;
   properties: Record<string, any>;
   created_at: number;
   updated_at: number;
@@ -15,6 +16,7 @@ export interface Page {
   id: string;
   title: string;
   type: 'normal' | 'journal';
+  user_id: string;
   root_blocks: string[];
   created_at: number;
   updated_at: number;
@@ -27,8 +29,12 @@ export class LocalGraphDatabase extends Dexie {
   constructor() {
     super('LocalGraphDB');
     this.version(1).stores({
-      blocks: 'uuid, parent_id, page_id', // Primary key and indexed props
+      blocks: 'uuid, parent_id, page_id',
       pages: 'id, title, type'
+    });
+    this.version(2).stores({
+      blocks: 'uuid, parent_id, page_id, user_id',
+      pages: 'id, title, type, user_id'
     });
   }
 }

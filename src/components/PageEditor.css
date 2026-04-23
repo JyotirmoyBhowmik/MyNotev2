@@ -1,0 +1,31 @@
+.page-editor {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  letter-spacing: -0.02em;
+}
+
+.page-content {
+  min-height: 50vh;
+  padding-bottom: 200px; /* Space at bottom for easier typing */
+  cursor: text;
+}
+
+.empty-page-hint {
+  color: var(--text-muted);
+  font-style: italic;
+  pointer-events: none;
+}

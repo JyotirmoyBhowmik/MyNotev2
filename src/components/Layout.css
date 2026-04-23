@@ -1,0 +1,14 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  position: relative;
+}

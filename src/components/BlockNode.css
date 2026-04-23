@@ -1,0 +1,55 @@
+.block-node {
+  display: flex;
+  margin-top: 4px;
+  position: relative;
+}
+
+.block-controls {
+  width: 24px;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+  user-select: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bullet {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.bullet:hover {
+  color: var(--text-primary);
+}
+
+.block-content-wrapper {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.block-content {
+  min-height: 24px;
+  padding: 2px 4px;
+  outline: none;
+  line-height: 1.5;
+  color: var(--text-primary);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.block-content[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+  display: block; /* For Firefox */
+}
+
+.block-children {
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border-color);
+}

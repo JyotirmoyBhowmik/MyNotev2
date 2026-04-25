@@ -31,7 +31,7 @@ export interface Page {
   id: string;
   user_id: string;
   title: string;
-  type: 'normal' | 'journal';
+  type: 'normal' | 'journal' | 'folder';
   root_blocks: string[];
   is_favorite: boolean;
   parent_page_id: string | null;
@@ -56,7 +56,8 @@ interface GraphState {
   setActivePage: (id: string) => void;
 
   // Pages
-  createPage: (title: string, type?: 'normal' | 'journal', parentId?: string | null) => Promise<Page>;
+  createPage: (title: string, type?: 'normal' | 'journal' | 'folder', parentId?: string | null) => Promise<Page>;
+  createFolder: (title: string, parentId?: string | null) => Promise<Page>;
   deletePage: (id: string) => Promise<void>;
   renamePage: (id: string, title: string) => Promise<void>;
   favoritePage: (id: string, val: boolean) => Promise<void>;
@@ -217,13 +218,17 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const newPage: Page = {
       id: uuidv4(), user_id: user!.id, title, type,
       root_blocks: [], is_favorite: false,
-      parent_page_id: parentId, tags: [], icon: null,
+      parent_page_id: parentId, tags: [], icon: type === 'folder' ? '📁' : null,
       created_at: Date.now(), updated_at: Date.now(),
     };
     const { error } = await supabase.from('pages').insert(newPage);
     if (error) throw new Error(error.message);
     set(s => ({ pages: { ...s.pages, [newPage.id]: newPage } }));
     return newPage;
+  },
+
+  createFolder: async (title, parentId = null) => {
+    return get().createPage(title, 'folder', parentId);
   },
 
   deletePage: async (id) => {

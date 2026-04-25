@@ -17,7 +17,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const { 
-    pages, activePageId, setActivePage, createPage, 
+    pages, activePageId, setActivePage, createPage, createFolder,
     deletePage, renamePage, createDailyPage 
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
@@ -70,6 +70,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     }
   };
 
+  const handleNewFolder = async (parentId: string | null = null) => {
+    const title = prompt('Folder name:');
+    if (title) {
+      const page = await createFolder(title, parentId);
+      setActivePage(page.id);
+      if (parentId) setExpandedPages(prev => ({ ...prev, [parentId]: true }));
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (confirm('Delete this page and all its blocks?')) {
       await deletePage(id);
@@ -101,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               <span className="w-3" />
             )}
           </span>
-          <span className="sidebar-item-icon">{page.icon || '📄'}</span>
+          <span className="sidebar-item-icon">{page.icon || (page.type === 'folder' ? '📁' : '📄')}</span>
           {renaming === page.id ? (
             <input
               className="sidebar-rename-input"
@@ -119,7 +128,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
           {contextPage === page.id && (
             <div className="sidebar-context-menu" onClick={e => e.stopPropagation()}>
               <button onClick={() => handleNewPage(page.id)}>
-                <FolderPlus size={12} /> New Sub-page
+                <Plus size={12} /> New Page
+              </button>
+              <button onClick={() => handleNewFolder(page.id)}>
+                <FolderPlus size={12} /> New Folder
               </button>
               <button onClick={() => { setRenaming(page.id); setRenameDraft(page.title); setContextPage(null); }}>
                 <Edit3 size={12} /> Rename
@@ -157,8 +169,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
 
       {/* Quick Actions */}
       <div className="sidebar-quick">
-        <button className="sidebar-quick-btn" onClick={() => handleNewPage(null)}>
-          <Plus size={14} /> New
+        <button className="sidebar-quick-btn" onClick={() => handleNewPage(null)} title="New Page">
+          <Plus size={14} /> Page
+        </button>
+        <button className="sidebar-quick-btn" onClick={() => handleNewFolder(null)} title="New Folder">
+          <FolderPlus size={14} /> Folder
         </button>
         <button className="sidebar-quick-btn" onClick={async () => await createDailyPage()}>
           <Calendar size={14} /> Today

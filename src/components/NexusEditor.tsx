@@ -15,23 +15,6 @@ import {
 import { BlockReference } from '../extensions/BlockReference'
 import './NexusEditor.css'
 
-// ─── Extensions (Static array) ──────────────────────────────────────────────
-const SHARED_EXTENSIONS = [
-  StarterKit.configure({
-    codeBlock: false,
-    heading: { levels: [1, 2, 3] },
-  }),
-  Placeholder.configure({
-    placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
-  }),
-  Typography,
-  BlockReference,
-  Image.configure({ inline: false, allowBase64: false }),
-  Link.configure({ openOnClick: true, HTMLAttributes: { class: 'tiptap-link' } }),
-  TaskList,
-  TaskItem.configure({ nested: true }),
-];
-
 interface NexusEditorProps {
   pageId: string
   onNavigateToPage?: (pageId: string) => void
@@ -51,8 +34,8 @@ const ToolbarBtn = memo(({
 ));
 
 export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = false }) => {
-  // v2.2 - Stabilized against parent re-renders
-  console.log('[NexusEditor] Init v2.2 for page:', pageId);
+  // v2.6 - Fixed duplicate extensions by memoizing instance creation
+  console.log('[NexusEditor] Init v2.6 for page:', pageId);
   
   const saveTimer = useRef<number | undefined>(undefined)
   const lastSavedContent = useRef<string | null>(null)
@@ -91,26 +74,43 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       .join('') || '<p></p>'
   }, [pageId])
 
+  // v2.6 Fix: Create FRESH extension instances for this editor instance
+  const extensions = useMemo(() => [
+    StarterKit.configure({
+      codeBlock: false,
+      heading: { levels: [1, 2, 3] },
+    }),
+    Placeholder.configure({
+      placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
+    }),
+    Typography,
+    BlockReference,
+    Image.configure({ inline: false, allowBase64: false }),
+    Link.configure({ 
+      openOnClick: true, 
+      HTMLAttributes: { class: 'tiptap-link' },
+      validate: href => /^https?:\/\//.test(href),
+    }),
+    TaskList,
+    TaskItem.configure({ nested: true }),
+  ], []);
+
   const editorOptions = useMemo(() => ({
-    extensions: SHARED_EXTENSIONS,
+    extensions,
     content: buildInitialContent(),
-    autofocus: false, // Prevent auto-scroll on mount which might trigger events
+    autofocus: false,
     editable: !readOnly,
     editorProps: {
       attributes: { class: 'tiptap nexus-editor-content' },
     },
     onUpdate: ({ editor }: { editor: any }) => {
       if (readOnly) return;
-      
       const html = editor.getHTML()
-      // Strict equality check to avoid triggering saves on meta-updates (like setEditable)
       if (html === lastSavedContent.current) return;
-
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
         const currentHtml = editor.getHTML()
         if (currentHtml === lastSavedContent.current) return;
-
         setIsLocalSaving(true);
         try {
           await savePageContent(pageId, currentHtml)
@@ -122,11 +122,10 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         }
       }, 1000) as unknown as number;
     },
-  }), [pageId]); // Options ONLY change if page switches
+  }), [pageId, extensions]); 
 
   const editor = useEditor(editorOptions)
 
-  // Use a ref to track current editable state to avoid redundant calls
   const currentEditable = useRef(!readOnly);
   useEffect(() => {
     if (editor && !editor.isDestroyed && currentEditable.current !== !readOnly) {
@@ -135,7 +134,6 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     }
   }, [readOnly, editor]);
 
-  // Handle page content syncing if it changes externally (rare for NexusEditor)
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
       const content = buildInitialContent();

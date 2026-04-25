@@ -19,8 +19,9 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
   const { openSlashMenu, closeSlashMenu, setSlashQuery, slashMenuOpen, slashMenuBlockId, setContextMenu, collapsedBlocks, toggleCollapsed } = useUIStore();
   const block = blocks[uuid];
   const contentRef = useRef<HTMLDivElement>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [showAddBtn, setShowAddBtn] = useState(false);
+  // editingRef mirrors isEditing but is always current (no stale closure)
+  const editingRef = React.useRef(false);
 
   // ── Drag & Drop ────────────────────────────────────────────────────────────
   const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
@@ -44,12 +45,13 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
     collect: (monitor) => ({ isOver: monitor.isOver() }),
   }), [uuid, blocks, pages]);
 
-  // ── Sync content on blur ───────────────────────────────────────────────────
+  // ── Sync parsed HTML when block content changes externally ──────────────────
+  // Only runs when the block is NOT focused (editingRef prevents mid-type stomps)
   useEffect(() => {
-    if (!isEditing && contentRef.current) {
+    if (!editingRef.current && contentRef.current) {
       contentRef.current.innerHTML = parseInlineContent(block?.content || '');
     }
-  }, [block?.content, isEditing]);
+  }, [block?.content]);
 
   if (!block) return null;
 
@@ -124,21 +126,35 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
   };
 
   const handleFocus = () => {
-    setIsEditing(true);
+    editingRef.current = true;   // must be synchronous — before React batching
     if (contentRef.current) {
+      // Switch from parsed HTML to raw markdown for editing
       contentRef.current.innerText = block.content;
+      // Move cursor to end
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(contentRef.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
     }
   };
 
   const handleBlur = async () => {
-    setIsEditing(false);
+    editingRef.current = false;  // must be synchronous — before React batching
     const text = contentRef.current?.innerText ?? '';
-    if (text !== block.content) {
-      await updateBlock(uuid, text);
-    }
-    // Re-render with parsed HTML
-    if (contentRef.current) {
-      contentRef.current.innerHTML = parseInlineContent(block.content);
+    const trimmed = text.trimEnd();
+    if (trimmed !== block.content) {
+      await updateBlock(uuid, trimmed);
+      // Re-render with parsed HTML using the NEW content
+      if (contentRef.current) {
+        contentRef.current.innerHTML = parseInlineContent(trimmed);
+      }
+    } else {
+      // Content unchanged — still re-render to show formatted view
+      if (contentRef.current) {
+        contentRef.current.innerHTML = parseInlineContent(block.content);
+      }
     }
   };
 
@@ -197,12 +213,10 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
       divider: '',
       image: '',
       file: '',
+      nexus_html: '',
     };
     return placeholders[block.block_type] || "Type '/' for commands...";
   };
-
-  // Is this a media block (non-editable)?
-  const isMediaBlock = block.block_type === 'image' || block.block_type === 'file';
 
   return (
     <div

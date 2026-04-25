@@ -1,0 +1,140 @@
+/* ── Nexus Editor ────────────────────────────────────────────────────────── */
+.nexus-editor-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.nexus-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.nexus-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.nexus-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-2);
+  margin: 0 4px;
+}
+
+.nexus-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border-radius: 5px;
+  color: var(--text-3);
+  transition: all 0.12s;
+}
+.nexus-toolbar-btn:hover { background: var(--hover); color: var(--text-1); }
+.nexus-toolbar-btn.active { background: var(--accent-glow); color: var(--accent); }
+
+/* ── Bubble menu ─────────────────────────────────────────────────────────── */
+.nexus-bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 4px 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.nexus-bubble-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  border-radius: 5px;
+  color: var(--text-2);
+  transition: all 0.1s;
+}
+.nexus-bubble-btn:hover { background: var(--hover); color: var(--text-1); }
+.nexus-bubble-btn[data-active="true"] { color: var(--accent); background: var(--accent-glow); }
+
+.nexus-bubble-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+/* ── Editor scroll area ──────────────────────────────────────────────────── */
+.nexus-editor-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.nexus-editor-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 48px 120px;
+}
+
+@media (max-width: 768px) {
+  .nexus-editor-page { padding: 24px 20px 80px; }
+}
+
+/* ── TipTap link ─────────────────────────────────────────────────────────── */
+.tiptap-link {
+  color: var(--accent);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(91,138,245,0.3);
+}
+.tiptap-link:hover { border-bottom-color: var(--accent); }
+
+/* ── Task checkbox ───────────────────────────────────────────────────────── */
+.tiptap ul[data-type="taskList"] input[type="checkbox"] {
+  appearance: none;
+  width: 15px; height: 15px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.tiptap ul[data-type="taskList"] input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.tiptap ul[data-type="taskList"] input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* ── Code block ──────────────────────────────────────────────────────────── */
+.tiptap .hljs-comment,
+.tiptap .hljs-quote       { color: #6b7280; }
+.tiptap .hljs-keyword,
+.tiptap .hljs-selector-tag { color: #c084fc; }
+.tiptap .hljs-string,
+.tiptap .hljs-attr         { color: #86efac; }
+.tiptap .hljs-number       { color: #fb923c; }
+.tiptap .hljs-title,
+.tiptap .hljs-function     { color: #60a5fa; }

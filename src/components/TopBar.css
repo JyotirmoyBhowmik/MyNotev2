@@ -4,12 +4,19 @@
   min-height: 40px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   gap: 12px;
   flex-shrink: 0;
+}
+
+.topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
 }
 
 .topbar-upload-status {

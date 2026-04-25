@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 export type BlockType =
   | 'text' | 'heading1' | 'heading2' | 'heading3'
   | 'bullet' | 'numbered' | 'toggle' | 'code'
-  | 'quote' | 'callout' | 'divider' | 'image' | 'file';
+  | 'quote' | 'callout' | 'divider' | 'image' | 'file' | 'nexus_html';
 
 export interface Block {
   uuid: string;
@@ -68,6 +68,9 @@ interface GraphState {
   outdentBlock: (uuid: string) => Promise<void>;
   toggleCollapse: (uuid: string) => Promise<void>;
   duplicateBlock: (uuid: string) => Promise<Block | null>;
+  // Nexus Editor — saves TipTap HTML as page rich content
+  savePageContent: (pageId: string, html: string) => Promise<void>;
+  updatePageContent: (pageId: string, content: string) => void;
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -415,5 +418,51 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         ...Object.fromEntries(followingSiblings.map(id => [id, { ...blocks[id], parent_id: uuid }])),
       }
     }));
+  },
+
+  // ── Nexus Editor: save TipTap HTML ─────────────────────────────────────────
+  savePageContent: async (pageId, html) => {
+    const userId = useAuthStore.getState().user?.id;
+    if (!userId) return;
+    // Store as a single 'nexus_html' block keyed by page
+    const { data: existing } = await supabase
+      .from('blocks')
+      .select('uuid')
+      .eq('page_id', pageId)
+      .eq('block_type', 'nexus_html' as any)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('blocks').update({ content: html, updated_at: Date.now() }).eq('uuid', existing.uuid);
+      set(s => ({
+        blocks: { ...s.blocks, [existing.uuid]: { ...s.blocks[existing.uuid], content: html } }
+      }));
+    } else {
+      const uuid = crypto.randomUUID();
+      const now = Date.now();
+      const newBlock = {
+        uuid, page_id: pageId, user_id: userId, parent_id: null,
+        content: html, block_type: 'nexus_html', is_collapsed: false,
+        children: [], properties: {}, created_at: now, updated_at: now,
+      };
+      await supabase.from('blocks').insert(newBlock);
+      set(s => ({
+        blocks: { ...s.blocks, [uuid]: newBlock as any },
+        pages: {
+          ...s.pages,
+          [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
+        }
+      }));
+    }
+  },
+
+  updatePageContent: (pageId, content) => {
+    set(s => {
+      const nexusBlock = Object.values(s.blocks).find(
+        b => b.page_id === pageId && b.block_type === ('nexus_html' as any)
+      );
+      if (!nexusBlock) return s;
+      return { blocks: { ...s.blocks, [nexusBlock.uuid]: { ...nexusBlock, content } } };
+    });
   },
 }));

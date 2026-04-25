@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
-import { Search, Upload, Download, Layout, BookOpen, ChevronRight, Image, FileText, Paperclip } from 'lucide-react';
+import { Search, Download, Layout, BookOpen, ChevronRight, Image, Paperclip } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
+import { PresenceBar } from './PresenceBar';
 import './TopBar.css';
+import './PresenceBar.css';
 
 interface TopBarProps {
   onExport: () => void;
@@ -46,7 +48,6 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
     setUploadProgress(`Uploading ${file.name}...`);
 
     try {
-      const ext = file.name.split('.').pop() ?? 'bin';
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${user.id}/${activePageId}/${Date.now()}_${safeName}`;
 
@@ -168,6 +169,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
       {uploadProgress && (
         <div className="topbar-upload-status">{uploadProgress}</div>
       )}
+
+      {/* Real-time collaboration */}
+      <PresenceBar />
 
       {/* Actions */}
       <div className="topbar-actions">

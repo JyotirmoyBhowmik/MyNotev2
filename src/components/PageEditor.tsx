@@ -7,16 +7,15 @@ import { CommandPalette } from './CommandPalette';
 import { ContextMenu } from './ContextMenu';
 import { BacklinksPanel } from './BacklinksPanel';
 import { JournalView } from './JournalView';
-import { BlockNode } from './BlockNode';
-import { InlineToolbar } from './InlineToolbar';
 import { TopBar } from './TopBar';
 import { TemplateModal } from './TemplateModal';
+import { NexusEditor } from './NexusEditor';
 import { Edit3, Star, Eye, PanelRight, BookMarked } from 'lucide-react';
 import { exportPageToMarkdown, downloadMarkdown } from '../hooks/useExport';
 import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {
-  const { activePageId, pages, blocks, addBlock, loadGraph, loading, renamePage, favoritePage, updatePageIcon } = useGraphStore();
+  const { activePageId, pages, blocks, loadGraph, loading, renamePage, favoritePage, updatePageIcon } = useGraphStore();
   const { setCommandPaletteOpen, rightSidebarOpen, toggleRightSidebar, viewMode, toggleViewMode, journalOpen, setJournalOpen } = useUIStore();
   const { backlinks } = useLinkStore();
 
@@ -100,12 +99,6 @@ export const PageEditor: React.FC = () => {
     setEditingTitle(false);
   };
 
-  const handlePageClick = async () => {
-    if (page.root_blocks.length === 0) {
-      const nb = await addBlock(page.id, null, 0, '');
-      setTimeout(() => document.getElementById(`block-${nb.uuid}`)?.focus(), 50);
-    }
-  };
 
   const EditorPane = () => (
     <div className="page-editor">
@@ -167,24 +160,11 @@ export const PageEditor: React.FC = () => {
         </div>
       </div>
 
-      <div className={`page-content ${viewMode === 'preview' ? 'preview-mode' : ''}`} onClick={handlePageClick}>
-        {page.root_blocks.length === 0 ? (
-          <div className="empty-page-hint">
-            Click here or press Enter to start writing...
-            <br />
-            <span className="hint-sub">
-              Type <kbd>/</kbd> for blocks • <kbd>Ctrl+K</kbd> to search • <kbd>Ctrl+Shift+T</kbd> for templates
-            </span>
-          </div>
-        ) : (
-          page.root_blocks.map(blockId => (
-            <BlockNode
-              key={blockId}
-              uuid={blockId}
-              onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)}
-            />
-          ))
-        )}
+      <div className="page-editor-content-area">
+        <NexusEditor 
+          pageId={activePageId} 
+          onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} 
+        />
       </div>
     </div>
   );
@@ -206,10 +186,12 @@ export const PageEditor: React.FC = () => {
             <div className="split-preview">
               <div className="split-preview-label">Preview</div>
               <div className="page-editor">
-                <div className="page-content preview-mode">
-                  {page.root_blocks.map(blockId => (
-                    <BlockNode key={blockId} uuid={blockId} onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />
-                  ))}
+                <div className="page-editor-content-area preview-only">
+                   <NexusEditor 
+                      pageId={activePageId} 
+                      onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} 
+                      readOnly={true}
+                    />
                 </div>
               </div>
             </div>
@@ -225,7 +207,6 @@ export const PageEditor: React.FC = () => {
       )}
 
       {/* Overlays */}
-      <InlineToolbar />
       <BlockMenu />
       <CommandPalette onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />
       <ContextMenu />

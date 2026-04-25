@@ -14,6 +14,7 @@ import {
   Loader2, CheckCircle2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { BlockReference } from '../extensions/BlockReference'
 import './NexusEditor.css'
 
 interface NexusEditorProps {
@@ -66,9 +67,10 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         heading: { levels: [1, 2, 3] },
       }),
       Placeholder.configure({
-        placeholder: "Type '/' for commands, or just start writing…",
+        placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
       }),
       Typography,
+      BlockReference,
       Image.configure({ inline: false, allowBase64: false }),
       Link.configure({ openOnClick: true, HTMLAttributes: { class: 'tiptap-link' } }),
       TaskList,

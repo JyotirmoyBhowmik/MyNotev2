@@ -10,6 +10,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { KanbanView } from './KanbanView';
 import './DatabaseView.css';
 
 interface DatabaseViewProps {
@@ -19,10 +20,22 @@ interface DatabaseViewProps {
 type ViewType = 'table' | 'kanban' | 'gallery';
 
 export const DatabaseView: React.FC<DatabaseViewProps> = ({ blockId }) => {
-  const { blocks, addBlock, updateBlock } = useGraphStore();
+  const { blocks, addBlock, updateBlock, updateBlockProperties } = useGraphStore();
   const dbBlock = blocks[blockId];
   const [view, setView] = useState<ViewType>('table');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Schema definition from block properties
+  const schema = useMemo(() => {
+    const defaultSchema = {
+      columns: [
+        { id: 'content', name: 'Name', type: 'text' },
+        { id: 'status', name: 'Status', type: 'select', options: ['To Do', 'In Progress', 'Done'] },
+        { id: 'created_at', name: 'Created', type: 'date' },
+      ]
+    };
+    return dbBlock?.properties?.schema || defaultSchema;
+  }, [dbBlock]);
 
   // The records are the children of the database block
   const records = useMemo(() => {
@@ -33,15 +46,16 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ blockId }) => {
       .filter(b => b.content.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [dbBlock, blocks, searchQuery]);
 
-  // For now, let's define some hardcoded columns (Property System will come next)
-  const columns = [
-    { key: 'content', label: 'Name', type: 'text' },
-    { key: 'status', label: 'Status', type: 'select' },
-    { key: 'created_at', label: 'Created', type: 'date' },
-  ];
-
   const handleAddRecord = async () => {
     await addBlock(dbBlock.page_id, blockId, dbBlock.children.length, 'New Record');
+  };
+
+  const handlePropertyChange = async (recordId: string, propId: string, value: any) => {
+    if (propId === 'content') {
+      await updateBlock(recordId, value);
+    } else {
+      await updateBlockProperties(recordId, { [propId]: value });
+    }
   };
 
   if (!dbBlock) return null;
@@ -91,8 +105,8 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ blockId }) => {
                <thead>
                  <tr>
                    <th className="w-8"></th>
-                   {columns.map(col => (
-                     <th key={col.key}>{col.label}</th>
+                   {schema.columns.map((col: any) => (
+                     <th key={col.id}>{col.name}</th>
                    ))}
                    <th className="w-10"></th>
                  </tr>
@@ -101,27 +115,47 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ blockId }) => {
                  {records.map(record => (
                    <tr key={record.uuid}>
                      <td className="record-drag">⠿</td>
-                     <td className="record-cell-primary">
-                       <input 
-                         type="text" 
-                         value={record.content}
-                         onChange={(e) => updateBlock(record.uuid, e.target.value)}
-                         className="cell-input"
-                       />
-                     </td>
-                     <td>
-                        <span className="badge">To Do</span>
-                     </td>
-                     <td className="text-muted text-xs">
-                       {new Date(record.created_at).toLocaleDateString()}
-                     </td>
+                     {schema.columns.map((col: any) => (
+                       <td key={col.id}>
+                         {col.type === 'select' ? (
+                           <select 
+                             className="cell-select"
+                             value={record.properties[col.id] || ''}
+                             onChange={(e) => handlePropertyChange(record.uuid, col.id, e.target.value)}
+                           >
+                             <option value="">Empty</option>
+                             {col.options?.map((opt: string) => (
+                               <option key={opt} value={opt}>{opt}</option>
+                             ))}
+                           </select>
+                         ) : col.id === 'content' ? (
+                           <input 
+                             type="text" 
+                             value={record.content}
+                             onChange={(e) => handlePropertyChange(record.uuid, 'content', e.target.value)}
+                             className="cell-input"
+                           />
+                         ) : col.type === 'date' ? (
+                           <div className="cell-date">
+                             {new Date(record.created_at).toLocaleDateString()}
+                           </div>
+                         ) : (
+                           <input 
+                             type="text" 
+                             value={record.properties[col.id] || ''}
+                             onChange={(e) => handlePropertyChange(record.uuid, col.id, e.target.value)}
+                             className="cell-input"
+                           />
+                         )}
+                       </td>
+                     ))}
                      <td>
                        <button className="p-1 hover:bg-white/5 rounded"><MoreHorizontal size={14} /></button>
                      </td>
                    </tr>
                  ))}
                  <tr className="add-row-tr" onClick={handleAddRecord}>
-                    <td colSpan={5}>
+                    <td colSpan={schema.columns.length + 2}>
                        <div className="add-row-hint"><Plus size={14} /> New Record</div>
                     </td>
                  </tr>
@@ -129,9 +163,11 @@ export const DatabaseView: React.FC<DatabaseViewProps> = ({ blockId }) => {
              </table>
           </div>
         ) : (
-          <div className="kanban-view p-8 text-center text-muted">
-             Kanban view implementation in progress...
-          </div>
+          <KanbanView 
+            records={records} 
+            schema={schema} 
+            onAddRecord={handleAddRecord}
+          />
         )}
       </div>
     </div>

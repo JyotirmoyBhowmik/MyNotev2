@@ -62,6 +62,7 @@ interface GraphState {
   addBlock: (pageId: string, parentId: string | null, index: number, content?: string, type?: BlockType) => Promise<Block>;
   updateBlock: (uuid: string, content: string) => Promise<void>;
   updateBlockType: (uuid: string, type: BlockType) => Promise<void>;
+  updateBlockProperties: (uuid: string, properties: Record<string, any>) => Promise<void>;
   deleteBlock: (uuid: string) => Promise<void>;
   moveBlock: (uuid: string, newParentId: string | null, newIndex: number) => Promise<void>;
   indentBlock: (uuid: string) => Promise<void>;
@@ -225,6 +226,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   updateBlockType: async (uuid, type) => {
     await supabase.from('blocks').update({ block_type: type }).eq('uuid', uuid);
     set(s => ({ blocks: { ...s.blocks, [uuid]: { ...s.blocks[uuid], block_type: type } } }));
+  },
+
+  updateBlockProperties: async (uuid, properties) => {
+    const block = get().blocks[uuid];
+    if (!block) return;
+    const newProps = { ...block.properties, ...properties };
+    await supabase.from('blocks').update({ properties: newProps, updated_at: Date.now() }).eq('uuid', uuid);
+    set(s => ({ blocks: { ...s.blocks, [uuid]: { ...block, properties: newProps } } }));
   },
 
   deleteBlock: async (uuid) => {

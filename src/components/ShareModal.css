@@ -1,0 +1,218 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.share-modal {
+  width: 100%;
+  max-width: 500px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.5);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleIn 0.2s ease;
+}
+
+.share-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.share-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.share-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.share-header p {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+.share-input-section {
+  padding: 20px;
+}
+
+.share-field {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  height: 44px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.share-field:focus-within {
+  border-color: var(--accent);
+}
+
+.share-field input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-1);
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
+.role-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-left: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.role-selector span {
+  font-size: 0.8rem;
+  color: var(--text-2);
+  text-transform: capitalize;
+}
+
+.role-selector select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.add-btn {
+  background: var(--accent);
+  color: white;
+  padding: 0 16px;
+  height: 100%;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.collaborators-list {
+  padding: 0 20px 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.collaborator-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.collaborator-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.collaborator-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--active-2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.collaborator-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.collaborator-email {
+  font-size: 0.85rem;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.collaborator-subtext {
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+.role-dropdown-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.share-footer {
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.access-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+.footer-btns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-link {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

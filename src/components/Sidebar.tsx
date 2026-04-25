@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
-import { LogOut, FileText, Plus, Star, Calendar, Search, ChevronRight, ChevronDown, Settings, Trash2, Edit3 } from 'lucide-react';
+import { LogOut, FileText, Plus, Star, Calendar, Search, ChevronRight, ChevronDown, Settings, Trash2, Edit3, Target } from 'lucide-react';
+import { cn } from '../lib/utils';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -13,7 +14,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const { pages, activePageId, setActivePage, createPage, deletePage, renamePage, createDailyPage } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
-  const { setCommandPaletteOpen, setJournalOpen } = useUIStore();
+  const { setCommandPaletteOpen, setJournalOpen, setStrategyOpen, strategyOpen, journalOpen } = useUIStore();
 
   const [expandedSections, setExpandedSections] = useState({ favorites: true, pages: true, journal: true });
   const [contextPage, setContextPage] = useState<string | null>(null);
@@ -99,13 +100,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
       {/* Quick Actions */}
       <div className="sidebar-quick">
         <button className="sidebar-quick-btn" onClick={handleNewPage}>
-          <Plus size={14} /> New Page
+          <Plus size={14} /> New
         </button>
         <button className="sidebar-quick-btn" onClick={async () => await createDailyPage()}>
           <Calendar size={14} /> Today
         </button>
-        <button className="sidebar-quick-btn" onClick={() => setJournalOpen(true)}>
+        <button className={cn("sidebar-quick-btn", journalOpen && "active")} onClick={() => { setJournalOpen(!journalOpen); setStrategyOpen(false); }}>
           <Calendar size={14} /> Journal
+        </button>
+        <button className={cn("sidebar-quick-btn", strategyOpen && "active")} onClick={() => { setStrategyOpen(!strategyOpen); setJournalOpen(false); }}>
+          <Target size={14} /> Strategy
         </button>
       </div>
 

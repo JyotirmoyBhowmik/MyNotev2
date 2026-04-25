@@ -42,6 +42,10 @@ interface UIState {
   journalOpen: boolean;
   setJournalOpen: (open: boolean) => void;
 
+  // Strategy dashboard
+  strategyOpen: boolean;
+  setStrategyOpen: (open: boolean) => void;
+
   // Context menu
   contextMenu: { x: number; y: number; blockId: string } | null;
   setContextMenu: (cm: { x: number; y: number; blockId: string } | null) => void;
@@ -81,6 +85,9 @@ export const useUIStore = create<UIState>((set) => ({
 
   journalOpen: false,
   setJournalOpen: (open) => set({ journalOpen: open }),
+
+  strategyOpen: false,
+  setStrategyOpen: (open) => set({ strategyOpen: open }),
 
   contextMenu: null,
   setContextMenu: (cm) => set({ contextMenu: cm }),

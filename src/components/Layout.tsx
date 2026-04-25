@@ -7,7 +7,8 @@ import { GraphView } from './GraphView';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './ui/resizable';
-import { BacklinksPanel } from './BacklinksPanel';
+import { Inspector } from './Inspector';
+import { OKRDashboard } from './strategy/OKRDashboard';
 import './Layout.css';
 
 interface LayoutProps {
@@ -18,7 +19,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
   const [showGraph, setShowGraph] = useState(false);
   const { activePageId } = useGraphStore();
-  const { rightSidebarOpen } = useUIStore();
+  const { rightSidebarOpen, strategyOpen } = useUIStore();
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -36,10 +37,12 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
 
           <ResizableHandle withHandle />
 
-          {/* Center: The Block Editor */}
-          <ResizablePanel defaultSize={rightSidebarOpen ? 64 : 82}>
+          {/* Center: The Block Editor or Dashboard */}
+          <ResizablePanel defaultSize={(rightSidebarOpen && !strategyOpen) ? 64 : 82}>
             <main className="main-content h-full flex flex-col relative">
-              {showGraph ? (
+              {strategyOpen ? (
+                <OKRDashboard />
+              ) : showGraph ? (
                 <GraphView onClose={() => setShowGraph(false)} activePageId={activePageId} />
               ) : (
                 <PageEditor />
@@ -56,14 +59,12 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
             </main>
           </ResizablePanel>
 
-          {/* Right: Inspector (Properties, Backlinks) */}
-          {rightSidebarOpen && (
+          {/* Right: Inspector (Properties, Backlinks, AI) */}
+          {rightSidebarOpen && !strategyOpen && (
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={18} minSize={15} maxSize={35}>
-                <div className="right-sidebar h-full flex flex-col overflow-y-auto">
-                   {activePageId && <BacklinksPanel pageId={activePageId} />}
-                </div>
+                 <Inspector pageId={activePageId} />
               </ResizablePanel>
             </>
           )}

@@ -138,3 +138,34 @@
 .tiptap .hljs-number       { color: #fb923c; }
 .tiptap .hljs-title,
 .tiptap .hljs-function     { color: #60a5fa; }
+
+.block-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(59, 130, 246, 0.1);
+  border-bottom: 1.5px solid rgba(59, 130, 246, 0.4);
+  color: var(--accent);
+  padding: 0 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  user-select: none;
+}
+
+.block-ref:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-bottom-color: var(--accent);
+}
+
+.block-ref-icon {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.block-ref-missing {
+  color: var(--red);
+  text-decoration: underline dotted;
+  opacity: 0.7;
+}

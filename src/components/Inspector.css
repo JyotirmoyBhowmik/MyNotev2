@@ -1,0 +1,137 @@
+.inspector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-2);
+}
+
+.inspector-tabs {
+  display: flex;
+  padding: 8px;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.inspector-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.inspector-tab:hover {
+  background: var(--hover);
+  color: var(--text-2);
+}
+
+.inspector-tab.active {
+  background: var(--active-2);
+  color: var(--text-1);
+}
+
+.inspector-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* AI Assistant Styles */
+.ai-assistant {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.ai-chat-history {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ai-message {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  animation: slideIn 0.3s ease;
+}
+
+.ai-message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.ai-message-body {
+  font-size: 0.85rem;
+  color: var(--text-1);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.ai-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.ai-input-wrap {
+  position: relative;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-input-wrap textarea {
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-1);
+  font-size: 0.85rem;
+  height: 80px;
+  padding: 4px;
+}
+
+.ai-send-btn {
+  align-self: flex-end;
+  background: var(--accent);
+  color: white;
+  padding: 6px;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+.ai-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

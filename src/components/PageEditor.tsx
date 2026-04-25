@@ -9,8 +9,9 @@ import { JournalView } from './JournalView';
 import { TopBar } from './TopBar';
 import { TemplateModal } from './TemplateModal';
 import { NexusEditor } from './NexusEditor';
-import { Edit3, Star, Eye, PanelRight, BookMarked } from 'lucide-react';
+import { Edit3, Star, Eye, PanelRight, BookMarked, Share2 } from 'lucide-react';
 import { exportPageToMarkdown, downloadMarkdown } from '../hooks/useExport';
+import { ShareModal } from './ShareModal';
 import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {
@@ -23,6 +24,7 @@ export const PageEditor: React.FC = () => {
   const [titleDraft, setTitleDraft] = useState('');
   const [splitView, setSplitView] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (!init) {
@@ -137,6 +139,9 @@ export const PageEditor: React.FC = () => {
             <button className={`page-action-btn ${viewMode === 'preview' ? 'active' : ''}`} onClick={toggleViewMode} title="Preview (Ctrl+E)">
               <Eye size={14} />
             </button>
+            <button className="page-action-btn" onClick={() => setShareOpen(true)} title="Share Page">
+              <Share2 size={14} />
+            </button>
             <button className={`page-action-btn ${rightSidebarOpen ? 'active' : ''}`} onClick={toggleRightSidebar} title="Right panel (Ctrl+\)">
               <PanelRight size={14} />
             </button>
@@ -205,6 +210,9 @@ export const PageEditor: React.FC = () => {
       <ContextMenu />
       {showTemplates && activePageId && (
         <TemplateModal pageId={activePageId} onClose={() => setShowTemplates(false)} />
+      )}
+      {shareOpen && (
+        <ShareModal pageTitle={page?.title || 'Page'} onClose={() => setShareOpen(false)} />
       )}
     </div>
   );

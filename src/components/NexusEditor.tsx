@@ -140,7 +140,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     if (editor && !editor.isDestroyed) {
       const content = buildInitialContent();
       if (content !== editor.getHTML()) {
-        editor.commands.setContent(content, false);
+        editor.commands.setContent(content, { emitUpdate: false });
         lastSavedContent.current = content;
       }
     }

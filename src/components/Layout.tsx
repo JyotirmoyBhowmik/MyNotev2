@@ -27,12 +27,12 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
         <ResizablePanelGroup orientation="horizontal" className="h-full" id="main-layout-group">
           {/* Left Sidebar: Navigation Tree */}
           <ResizablePanel 
-            defaultSize={18} 
-            minSize={12} 
-            maxSize={40}
+            defaultSize={20} 
+            minSize={10} 
+            maxSize={50}
             id="sidebar-panel"
           >
-            <div className="h-full flex flex-col" style={{ minWidth: '200px' }}>
+            <div className="h-full flex flex-col" style={{ minWidth: '250px' }}>
               <Sidebar onOpenAdmin={onOpenAdmin} isAdmin={isAdmin} />
             </div>
           </ResizablePanel>

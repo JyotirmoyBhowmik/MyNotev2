@@ -27,20 +27,26 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
   const saveTimer = useRef<number | undefined>(undefined)
 
   // Build initial content from page blocks (markdown → HTML → TipTap doc)
+  // ── Stable Initial Content ────────────────────────────────────────────────
+  const blocksRef = useRef(blocks)
+  useEffect(() => { blocksRef.current = blocks }, [blocks])
+
   const buildInitialContent = useCallback(() => {
+    const page = pages[pageId]
     if (!page) return '<p></p>'
     
-    // Check for existing nexus_html block first
-    const nexusBlock = Object.values(blocks).find(
+    // Use the ref to avoid buildInitialContent identity changing on every save
+    const currentBlocks = blocksRef.current
+    const nexusBlock = Object.values(currentBlocks).find(
       b => b.page_id === pageId && b.block_type === 'nexus_html'
-    );
-    if (nexusBlock) return nexusBlock.content;
+    )
+    if (nexusBlock) return nexusBlock.content
 
-    // Fallback: build from legacy blocks
-    return page.root_blocks
-      .map(id => {
-        const b = blocks[id]
-        if (!b) return ''
+    // Fallback: build from root blocks
+    return (page.root_blocks || [])
+      .map(id => currentBlocks[id])
+      .filter(Boolean)
+      .map(b => {
         switch (b.block_type) {
           case 'heading1':  return `<h1>${b.content || ''}</h1>`
           case 'heading2':  return `<h2>${b.content || ''}</h2>`
@@ -56,7 +62,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         }
       })
       .join('') || '<p></p>'
-  }, [pageId, blocks, page])
+  }, [pageId, pages])
 
   const lastSavedContent = useRef<string | null>(null)
   const isSaving = useRef(false)
@@ -133,7 +139,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     // Only set content if the page actually changed or it's the first load
     if (pageId !== lastPageId.current) {
       const initial = buildInitialContent()
-      console.log('NexusEditor: Initializing content for page', pageId);
+      console.log('NexusEditor: Initializing content for page', pageId, 'length:', initial.length);
       editor.commands.setContent(initial)
       lastSavedContent.current = initial
       lastPageId.current = pageId

@@ -6,7 +6,7 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, memo, useMemo } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import {
   Bold, Italic, Code, Strikethrough, Link2, List, ListOrdered,
@@ -15,29 +15,60 @@ import {
 import { BlockReference } from '../extensions/BlockReference'
 import './NexusEditor.css'
 
+// ─── Extensions (Static array to avoid re-registration) ────────────────────────
+const SHARED_EXTENSIONS = [
+  StarterKit.configure({
+    codeBlock: false,
+    heading: { levels: [1, 2, 3] },
+  }),
+  Placeholder.configure({
+    placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
+  }),
+  Typography,
+  BlockReference,
+  Image.configure({ inline: false, allowBase64: false }),
+  Link.configure({ openOnClick: true, HTMLAttributes: { class: 'tiptap-link' } }),
+  TaskList,
+  TaskItem.configure({ nested: true }),
+];
+
 interface NexusEditorProps {
   pageId: string
   onNavigateToPage?: (pageId: string) => void
   readOnly?: boolean
 }
 
+const ToolbarBtn = memo(({
+  onClick, active, title, children,
+}: { onClick: () => void; active?: boolean; title: string; children: React.ReactNode }) => (
+  <button
+    onClick={onClick}
+    title={title}
+    className={`nexus-toolbar-btn ${active ? 'active' : ''}`}
+  >
+    {children}
+  </button>
+));
+
 export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = false }) => {
-  const { pages } = useGraphStore()
-  const page = pages[pageId]
+  console.log('[NexusEditor] Rendering version v2.1 for page:', pageId);
+  
   const saveTimer = useRef<number | undefined>(undefined)
+  const lastSavedContent = useRef<string | null>(null)
+  const [isLocalSaving, setIsLocalSaving] = useState(false)
+
+  const savePageContent = useGraphStore(s => s.savePageContent);
 
   const buildInitialContent = useCallback(() => {
-    // Read from store directly during initialization to ensure freshness
     const store = useGraphStore.getState()
-    const page = store.pages[pageId]
-    if (!page) return '<p></p>'
-    
     const nexusBlock = Object.values(store.blocks).find(
       b => b.page_id === pageId && b.block_type === 'nexus_html'
     )
     if (nexusBlock) return nexusBlock.content
 
-    // Fallback: build from root blocks
+    const page = store.pages[pageId]
+    if (!page) return '<p></p>'
+
     return (page.root_blocks || [])
       .map(id => store.blocks[id])
       .filter(Boolean)
@@ -59,83 +90,51 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       .join('') || '<p></p>'
   }, [pageId])
 
-  const lastSavedContent = useRef<string | null>(null)
-  const [_, forceUpdate] = useState({})
-  const isSaving = useRef(false)
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-        heading: { levels: [1, 2, 3] },
-      }),
-      Placeholder.configure({
-        placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
-      }),
-      Typography,
-      BlockReference,
-      Image.configure({ inline: false, allowBase64: false }),
-      Link.configure({ openOnClick: true, HTMLAttributes: { class: 'tiptap-link' } }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-    ],
-    content: buildInitialContent(), // Initialize directly from store/cache ONCE
+  // Explicitly memoize options to ensure TipTap never sees a new object unless page changes
+  const editorOptions = useMemo(() => ({
+    extensions: SHARED_EXTENSIONS,
+    content: buildInitialContent(),
     autofocus: !readOnly,
     editable: !readOnly,
     editorProps: {
       attributes: { class: 'tiptap nexus-editor-content' },
     },
-    onUpdate: ({ editor }) => {
-      if (readOnly || isSaving.current) return;
+    onUpdate: ({ editor }: { editor: any }) => {
+      if (readOnly) return;
       
       const html = editor.getHTML()
       if (html === lastSavedContent.current) return;
 
-      // Debounced auto-save
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
         const currentHtml = editor.getHTML()
         if (currentHtml === lastSavedContent.current) return;
 
-        isSaving.current = true;
-        forceUpdate({});
+        setIsLocalSaving(true);
         try {
-          await useGraphStore.getState().savePageContent(pageId, currentHtml)
+          await savePageContent(pageId, currentHtml)
           lastSavedContent.current = currentHtml;
         } catch (err) {
-          console.error('NexusEditor save error', err);
+          console.error('[NexusEditor] Save failed:', err);
         } finally {
-          isSaving.current = false;
-          forceUpdate({});
+          setIsLocalSaving(false);
         }
       }, 1000) as unknown as number;
     },
-  }, [pageId]) // ONLY re-create when page changes
+  }), [pageId]); // Re-calculate ONLY when page switches
 
-  // Synchronize readOnly state without resetting content
+  const editor = useEditor(editorOptions, [pageId])
+
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
       editor.setEditable(!readOnly)
     }
   }, [readOnly, editor])
 
-  if (!page || !editor) return null
-
-  const ToolbarBtn = ({
-    onClick, active, title, children,
-  }: { onClick: () => void; active?: boolean; title: string; children: React.ReactNode }) => (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`nexus-toolbar-btn ${active ? 'active' : ''}`}
-    >
-      {children}
-    </button>
-  )
+  if (!pageId || !editor) return null
 
   return (
     <div className={`nexus-editor-wrap ${readOnly ? 'read-only' : ''}`}>
-      {/* Fixed toolbar - hidden in readOnly */}
       {!readOnly && (
         <div className="nexus-toolbar">
           <div className="nexus-toolbar-group">
@@ -198,7 +197,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
             </ToolbarBtn>
           </div>
           <div className="flex-1" />
-          {isSaving.current && (
+          {isLocalSaving && (
             <div className="flex items-center gap-2 px-3 animate-pulse">
               <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
               <span className="text-[10px] font-bold text-accent uppercase tracking-tighter">Saving</span>
@@ -207,7 +206,6 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         </div>
       )}
 
-      {/* Editor content */}
       <div className="nexus-editor-scroll">
         <div className="nexus-editor-page">
           <EditorContent editor={editor} />

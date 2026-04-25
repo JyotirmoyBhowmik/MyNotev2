@@ -27,22 +27,22 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
         <ResizablePanelGroup 
           direction="horizontal" 
           className="h-full" 
-          id="main-layout-group"
-          autoSaveId="nexus-main-layout"
+          id="main-layout-group-v2"
+          autoSaveId="nexus-main-layout-v2"
         >
           {/* Left Sidebar: Navigation Tree */}
           <ResizablePanel
-            defaultSize={25}
-            minSize={10}
-            maxSize={80}
-            id="sidebar-panel"
+            defaultSize={40}
+            minSize={15}
+            maxSize={85}
+            id="sidebar-panel-v3"
           >
             <div className="h-full flex flex-col">
               <Sidebar onOpenAdmin={onOpenAdmin} isAdmin={isAdmin} />
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/30 transition-colors" />
+          <ResizableHandle withHandle className="hover:bg-accent/50" />
 
           {/* Center: The Block Editor or Dashboard */}
           <ResizablePanel

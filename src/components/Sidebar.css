@@ -113,7 +113,13 @@
 .sidebar-item.active { background: var(--active); color: var(--text-1); border-left: 2px solid var(--accent); }
 
 .sidebar-item-icon { font-size: 0.85rem; flex-shrink: 0; }
-.sidebar-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-item-label { 
+  flex: 1; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+  padding-right: 4px;
+}
 
 .sidebar-rename-input {
   flex: 1;

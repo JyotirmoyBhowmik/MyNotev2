@@ -24,6 +24,7 @@ export interface Block {
   is_collapsed: boolean;
   created_at: number;
   updated_at: number;
+  _local_ts?: number; 
 }
 
 export interface Page {
@@ -45,8 +46,9 @@ interface GraphState {
   blocks: Record<string, Block>;
   activePageId: string | null;
   loading: boolean;
-  nexusBlockCache: Record<string, string>; // pageId -> blockUuid
-  saveLocks: Record<string, boolean>; // pageId -> isSaving
+  nexusBlockCache: Record<string, string>; 
+  saveLocks: Record<string, boolean>; 
+  pendingSaves: Record<string, string | null>; 
   setLoading: (loading: boolean) => void;
 
   // Core
@@ -72,7 +74,7 @@ interface GraphState {
   outdentBlock: (uuid: string) => Promise<void>;
   toggleCollapse: (uuid: string) => Promise<void>;
   duplicateBlock: (uuid: string) => Promise<Block | null>;
-  // Nexus Editor — saves TipTap HTML as page rich content
+  // Nexus Editor
   savePageContent: (pageId: string, html: string) => Promise<void>;
   updatePageContent: (pageId: string, content: string) => void;
 }
@@ -86,10 +88,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   loading: true,
   nexusBlockCache: {},
   saveLocks: {},
+  pendingSaves: {},
   setLoading: (loading) => set({ loading }),
 
-  // ── Load all data from Supabase ────────────────────────────────────────────
   loadGraph: async () => {
+    console.log('[GraphStore] loadGraph v2.1 init');
     const user = useAuthStore.getState().user;
     if (!user) return;
     set({ loading: true });
@@ -135,15 +138,73 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     });
 
     set({ pages, blocks, nexusBlockCache, loading: false });
-
-    // Build link index
     useLinkStore.getState().buildIndex(blocks, pages);
+
+    // Realtime
+    supabase
+      .channel('graph-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks', filter: `user_id=eq.${user.id}` }, (payload) => {
+        const newData = payload.new as Block;
+        const oldData = payload.old as { uuid: string };
+        
+        if (payload.eventType === 'DELETE') {
+          set(s => {
+            const next = { ...s.blocks };
+            delete next[oldData.uuid];
+            return { blocks: next };
+          });
+          return;
+        }
+
+        const localBlock = get().blocks[newData.uuid];
+        if (localBlock && localBlock._local_ts && localBlock._local_ts >= (newData.updated_at || 0)) {
+          console.log('[RealtimeSync] Skipping stale update (Local Wins) for', newData.uuid);
+          return;
+        }
+
+        set(s => ({
+          blocks: {
+            ...s.blocks,
+            [newData.uuid]: {
+              ...newData,
+              children: newData.children ?? [],
+              properties: newData.properties ?? {},
+              block_type: newData.block_type ?? 'text',
+              is_collapsed: newData.is_collapsed ?? false,
+            }
+          }
+        }));
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pages', filter: `user_id=eq.${user.id}` }, (payload) => {
+        const newData = payload.new as Page;
+        if (payload.eventType === 'DELETE') {
+          set(s => {
+            const next = { ...s.pages };
+            delete next[(payload.old as any).id];
+            return { pages: next };
+          });
+          return;
+        }
+        set(s => ({
+          pages: {
+            ...s.pages,
+            [newData.id]: {
+              ...newData,
+              root_blocks: newData.root_blocks ?? [],
+              tags: newData.tags ?? [],
+              is_favorite: newData.is_favorite ?? false,
+              parent_page_id: newData.parent_page_id ?? null,
+              icon: newData.icon ?? null,
+            }
+          }
+        }));
+      })
+      .subscribe();
   },
 
   setActivePage: (id) => set({ activePageId: id }),
 
-  // ── Pages ──────────────────────────────────────────────────────────────────
-
+  // Pages
   createPage: async (title, type = 'normal', parentId = null) => {
     const user = useAuthStore.getState().user;
     const newPage: Page = {
@@ -193,8 +254,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     return page;
   },
 
-  // ── Blocks ─────────────────────────────────────────────────────────────────
-
+  // Blocks
   addBlock: async (pageId, parentId, index, content = '', type = 'text') => {
     const user = useAuthStore.getState().user;
     const newBlock: Block = {
@@ -231,9 +291,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const block = get().blocks[uuid];
     if (!block) return;
     const updated_at = Date.now();
+    set(s => ({ blocks: { ...s.blocks, [uuid]: { ...block, content, updated_at, _local_ts: updated_at } } }));
     await supabase.from('blocks').update({ content, updated_at }).eq('uuid', uuid);
-    set(s => ({ blocks: { ...s.blocks, [uuid]: { ...block, content, updated_at } } }));
-    // Rebuild link index
     const { pages, blocks } = get();
     useLinkStore.getState().buildIndex({ ...blocks, [uuid]: { ...block, content } }, pages);
   },
@@ -314,7 +373,6 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const oldParentArray = block.parent_id ? blocks[block.parent_id]?.children : pages[block.page_id]?.root_blocks;
     const oldIndex = (oldParentArray ?? []).indexOf(uuid);
 
-    // Remove from old location
     const newOldParentArray = (oldParentArray ?? []).filter(id => id !== uuid);
     if (block.parent_id) {
       await supabase.from('blocks').update({ children: newOldParentArray }).eq('uuid', block.parent_id);
@@ -325,11 +383,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       set(s => ({ pages: { ...s.pages, [block.page_id]: { ...page, root_blocks: newOldParentArray } } }));
     }
 
-    // Adjust index if same parent and moving down
     let adjustedIndex = newIndex;
     if (block.parent_id === newParentId && oldIndex < newIndex) adjustedIndex--;
 
-    // Add to new location
     const newParentArray = newParentId
       ? [...(get().blocks[newParentId]?.children ?? [])]
       : [...(get().pages[block.page_id]?.root_blocks ?? [])];
@@ -444,69 +500,59 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     }));
   },
 
-  // ── Nexus Editor: save TipTap HTML ─────────────────────────────────────────
+  // ── Nexus Editor: Queued Saving System v2.1 ────────────────────────────────
   savePageContent: async (pageId, html) => {
     const { nexusBlockCache, saveLocks } = get();
+    
     if (saveLocks[pageId]) {
-      console.log('NexusSave: Locked for page', pageId);
+      console.log('[NexusSave] Queueing latest content (busy) for', pageId);
+      set(s => ({ pendingSaves: { ...s.pendingSaves, [pageId]: html } }));
       return;
     }
 
     const userId = useAuthStore.getState().user?.id;
     if (!userId) return;
 
-    // Set lock
-    set(s => ({ saveLocks: { ...s.saveLocks, [pageId]: true } }));
+    set(s => ({ 
+      saveLocks: { ...s.saveLocks, [pageId]: true },
+      pendingSaves: { ...s.pendingSaves, [pageId]: null }
+    }));
 
     try {
-      // 1. Check cache first
-      const cachedUuid = nexusBlockCache[pageId];
-      if (cachedUuid && get().blocks[cachedUuid]) {
-        const block = get().blocks[cachedUuid];
-        if (block.content === html) {
-          console.log('NexusSave: Content unchanged, skipping');
-          return;
-        }
-
-        console.log('NexusSave: Updating existing block', cachedUuid);
-        const updated_at = Date.now();
-        // Optimistic update
-        set(s => ({
-          blocks: { ...s.blocks, [cachedUuid]: { ...block, content: html, updated_at } }
-        }));
-        await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', cachedUuid);
-        return;
+      let blockUuid = nexusBlockCache[pageId];
+      if (!blockUuid) {
+        const { data: existingDB } = await supabase
+          .from('blocks')
+          .select('uuid')
+          .eq('page_id', pageId)
+          .eq('block_type', 'nexus_html' as any)
+          .maybeSingle();
+        if (existingDB) blockUuid = existingDB.uuid;
       }
 
-      console.log('NexusSave: Block not in cache, checking DB...');
-      // 2. Fallback: Double check DB if not in cache (unlikely but safe)
-      const { data: existingDB } = await supabase
-        .from('blocks')
-        .select('uuid')
-        .eq('page_id', pageId)
-        .eq('block_type', 'nexus_html' as any)
-        .maybeSingle();
-
-      if (existingDB) {
-        console.log('NexusSave: Found existing block in DB', existingDB.uuid);
-        const updated_at = Date.now();
-        await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingDB.uuid);
-        set(s => ({
-          blocks: { ...s.blocks, [existingDB.uuid]: { ...s.blocks[existingDB.uuid], content: html, updated_at } },
-          nexusBlockCache: { ...s.nexusBlockCache, [pageId]: existingDB.uuid }
-        }));
+      if (blockUuid) {
+        const block = get().blocks[blockUuid];
+        if (block && block.content === html) {
+          console.log('[NexusSave] Content unchanged (v2.1)');
+        } else {
+          console.log('[NexusSave] Updating block', blockUuid);
+          const updated_at = Date.now();
+          set(s => ({
+            blocks: { ...s.blocks, [blockUuid]: { ...(s.blocks[blockUuid] || block), content: html, updated_at, _local_ts: updated_at } },
+            nexusBlockCache: { ...s.nexusBlockCache, [pageId]: blockUuid }
+          }));
+          await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', blockUuid);
+        }
       } else {
-        console.log('NexusSave: Creating new block for page', pageId);
-        // 3. Create new block
+        console.log('[NexusSave] Creating new block');
         const uuid = uuidv4();
         const now = Date.now();
         const newBlock: Block = {
           uuid, page_id: pageId, user_id: userId, parent_id: null,
           content: html, block_type: 'nexus_html', is_collapsed: false,
           children: [], properties: {}, created_at: now, updated_at: now,
+          _local_ts: now,
         };
-        
-        // Update local state and cache immediately
         set(s => ({
           blocks: { ...s.blocks, [uuid]: newBlock },
           nexusBlockCache: { ...s.nexusBlockCache, [pageId]: uuid },
@@ -515,12 +561,18 @@ export const useGraphStore = create<GraphState>((set, get) => ({
             [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
           }
         }));
-        
         await supabase.from('blocks').insert(newBlock);
       }
+    } catch (err) {
+      console.error('[NexusSave] Failed:', err);
     } finally {
-      // Release lock
       set(s => ({ saveLocks: { ...s.saveLocks, [pageId]: false } }));
+      
+      const latestPending = get().pendingSaves[pageId];
+      if (latestPending !== null && latestPending !== undefined) {
+        console.log('[NexusSave] Running queued save (v2.1)');
+        get().savePageContent(pageId, latestPending);
+      }
     }
   },
 
@@ -530,7 +582,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         b => b.page_id === pageId && b.block_type === ('nexus_html' as any)
       );
       if (!nexusBlock) return s;
-      return { blocks: { ...s.blocks, [nexusBlock.uuid]: { ...nexusBlock, content } } };
+      return { blocks: { ...s.blocks, [nexusBlock.uuid]: { ...nexusBlock, content, _local_ts: Date.now() } } };
     });
   },
 }));

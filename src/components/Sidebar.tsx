@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useGraphStore, Page } from '../store/graphStore';
+import { useGraphStore, type Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { 

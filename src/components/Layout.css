@@ -1,9 +1,21 @@
 /* ── Layout ────────────────────────────────────────────────────────────── */
-.app-layout {
+/*.app-layout {
   display: flex;
-  width: 1000vw;
+  width: 200vw;
   height: 100vh;
   overflow: hidden;
+  background: var(--bg);
+} */
+
+.app-layout {
+  display: flex;
+  width: 200vw;
+  /* Changed from 100vw to 200vw */
+  height: 100vh;
+  overflow-x: auto;
+  /* Changed from hidden to auto to allow horizontal scrolling */
+  overflow-y: hidden;
+  /* Keeps the vertical scroll locked if desired */
   background: var(--bg);
 }
 

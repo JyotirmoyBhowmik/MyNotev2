@@ -70,7 +70,10 @@ export const PageEditor: React.FC = () => {
     downloadMarkdown(md, page.title);
   };
 
-  if (loading || !init) {
+  // Only show the full-screen loader if we have NO pages yet (initial cold load)
+  const isInitialLoad = (loading || !init) && Object.keys(pages).length === 0;
+
+  if (isInitialLoad) {
     return (
       <div className="page-loading">
         <div className="page-loading-spinner" />

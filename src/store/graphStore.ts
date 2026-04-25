@@ -509,6 +509,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   // ── Nexus Editor: Queued Saving System v2.1 ────────────────────────────────
   savePageContent: async (pageId, html) => {
+    if (get().loading) return; // Prevent saving while loading/syncing
+    
     const { nexusBlockCache, saveLocks } = get();
     
     if (saveLocks[pageId]) {
@@ -560,6 +562,10 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           children: [], properties: {}, created_at: now, updated_at: now,
           _local_ts: now,
         };
+        
+        // Strip _local_ts before sending to Supabase
+        const { _local_ts, ...dbBlock } = newBlock;
+        
         set(s => ({
           blocks: { ...s.blocks, [uuid]: newBlock },
           nexusBlockCache: { ...s.nexusBlockCache, [pageId]: uuid },
@@ -568,7 +574,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
             [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
           }
         }));
-        await supabase.from('blocks').insert(newBlock);
+        await supabase.from('blocks').insert(dbBlock);
       }
     } catch (err) {
       console.error('[NexusSave] Failed:', err);

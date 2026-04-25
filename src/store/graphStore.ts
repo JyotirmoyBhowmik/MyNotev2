@@ -143,7 +143,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     useLinkStore.getState().buildIndex(blocks, pages);
 
     // Realtime: Clean up existing subscription first to avoid "already subscribed" errors
-    const oldChannel = supabase.getChannels().find(c => c.topic === 'realtime:graph-sync' || c.name === 'graph-sync');
+    const oldChannel = supabase.getChannels().find(c => c.topic === 'realtime:graph-sync');
     if (oldChannel) {
       await supabase.removeChannel(oldChannel);
     }

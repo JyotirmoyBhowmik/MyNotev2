@@ -24,12 +24,17 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app-layout">
-        <ResizablePanelGroup orientation="horizontal" className="h-full" id="main-layout-group">
+        <ResizablePanelGroup 
+          direction="horizontal" 
+          className="h-full" 
+          id="main-layout-group"
+          autoSaveId="nexus-main-layout"
+        >
           {/* Left Sidebar: Navigation Tree */}
           <ResizablePanel
-            defaultSize={20}
-            minSize={2}
-            maxSize={260}
+            defaultSize={25}
+            minSize={10}
+            maxSize={80}
             id="sidebar-panel"
           >
             <div className="h-full flex flex-col">

@@ -6,7 +6,7 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import { useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import {
   Bold, Italic, Code, Strikethrough, Link2, List, ListOrdered,
@@ -22,32 +22,24 @@ interface NexusEditorProps {
 }
 
 export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = false }) => {
-  const { pages, blocks } = useGraphStore()
+  const { pages } = useGraphStore()
   const page = pages[pageId]
   const saveTimer = useRef<number | undefined>(undefined)
 
-  // ── Stable Initial Content ────────────────────────────────────────────────
-  const blocksRef = useRef(blocks)
-  const pagesRef = useRef(pages)
-  useEffect(() => { 
-    blocksRef.current = blocks 
-    pagesRef.current = pages
-  }, [blocks, pages])
-
   const buildInitialContent = useCallback(() => {
-    const page = pagesRef.current[pageId]
+    // Read from store directly during initialization to ensure freshness
+    const store = useGraphStore.getState()
+    const page = store.pages[pageId]
     if (!page) return '<p></p>'
     
-    // Use the ref to avoid buildInitialContent identity changing on every save
-    const currentBlocks = blocksRef.current
-    const nexusBlock = Object.values(currentBlocks).find(
+    const nexusBlock = Object.values(store.blocks).find(
       b => b.page_id === pageId && b.block_type === 'nexus_html'
     )
     if (nexusBlock) return nexusBlock.content
 
     // Fallback: build from root blocks
     return (page.root_blocks || [])
-      .map(id => currentBlocks[id])
+      .map(id => store.blocks[id])
       .filter(Boolean)
       .map(b => {
         switch (b.block_type) {
@@ -68,6 +60,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
   }, [pageId])
 
   const lastSavedContent = useRef<string | null>(null)
+  const [_, forceUpdate] = useState({})
   const isSaving = useRef(false)
 
   const editor = useEditor({
@@ -105,6 +98,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         if (currentHtml === lastSavedContent.current) return;
 
         isSaving.current = true;
+        forceUpdate({});
         try {
           await useGraphStore.getState().savePageContent(pageId, currentHtml)
           lastSavedContent.current = currentHtml;
@@ -112,6 +106,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
           console.error('NexusEditor save error', err);
         } finally {
           isSaving.current = false;
+          forceUpdate({});
         }
       }, 1000) as unknown as number;
     },
@@ -202,6 +197,13 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
               <Redo size={14} />
             </ToolbarBtn>
           </div>
+          <div className="flex-1" />
+          {isSaving.current && (
+            <div className="flex items-center gap-2 px-3 animate-pulse">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+              <span className="text-[10px] font-bold text-accent uppercase tracking-tighter">Saving</span>
+            </div>
+          )}
         </div>
       )}
 

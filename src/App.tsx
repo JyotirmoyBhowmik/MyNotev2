@@ -21,7 +21,7 @@ function App() {
     return <Login />;
   }
 
-  if (profile?.role === 'pending') {
+  if (profile?.is_approved === false) {
     return <PendingApproval />;
   }
 

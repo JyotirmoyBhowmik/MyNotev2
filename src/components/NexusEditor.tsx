@@ -10,10 +10,8 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import {
   Bold, Italic, Code, Strikethrough, Link2, List, ListOrdered,
-  Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo,
-  Loader2, CheckCircle2
+  Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { BlockReference } from '../extensions/BlockReference'
 import './NexusEditor.css'
 
@@ -60,6 +58,9 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       .join('') || '<p></p>'
   }, [pageId, blocks, page])
 
+  const lastSavedContent = useRef<string | null>(null)
+  const isSaving = useRef(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -86,33 +87,48 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       },
     },
     onUpdate: ({ editor }) => {
-      if (readOnly) return;
-      // Debounced auto-save — 600ms after last keystroke
+      if (readOnly || isSaving.current) return;
+      
+      const html = editor.getHTML()
+      if (html === lastSavedContent.current) return;
+
+      // Debounced auto-save — 800ms after last keystroke
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
-        const html = editor.getHTML()
-        // Compare with existing nexus_html to avoid redundant saves
-        const currentNexus = Object.values(useGraphStore.getState().blocks).find(
-          b => b.page_id === pageId && b.block_type === 'nexus_html'
-        );
-        if (currentNexus && currentNexus.content === html) return;
+        if (isSaving.current) return;
+        
+        // Final check before save
+        const currentHtml = editor.getHTML()
+        if (currentHtml === lastSavedContent.current) return;
 
-        const toastId = toast.loading('Saving changes...', { icon: <Loader2 className="animate-spin" size={14} /> });
-        try {
-          await useGraphStore.getState().savePageContent(pageId, html)
-          toast.success('Changes saved', { id: toastId, icon: <CheckCircle2 size={14} className="text-green" /> });
-        } catch (err) {
-          toast.error('Failed to save', { id: toastId });
+        // Double check store cache for redundancy
+        const store = useGraphStore.getState();
+        const cachedUuid = store.nexusBlockCache[pageId];
+        const cachedBlock = cachedUuid ? store.blocks[cachedUuid] : null;
+        if (cachedBlock && cachedBlock.content === currentHtml) {
+          lastSavedContent.current = currentHtml;
+          return;
         }
-      }, 600) as unknown as number;
+
+        isSaving.current = true;
+        try {
+          await store.savePageContent(pageId, currentHtml)
+          lastSavedContent.current = currentHtml;
+        } catch (err) {
+          console.error('NexusEditor save error', err);
+        } finally {
+          isSaving.current = false;
+        }
+      }, 800) as unknown as number;
     },
   }, [pageId])
 
   // When page changes, reload content
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
-      // Only set content if we are switching pages
-      editor.commands.setContent(buildInitialContent())
+      const initial = buildInitialContent()
+      editor.commands.setContent(initial)
+      lastSavedContent.current = initial
       editor.setEditable(!readOnly)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

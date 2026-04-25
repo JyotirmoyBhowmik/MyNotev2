@@ -45,6 +45,9 @@ interface GraphState {
   blocks: Record<string, Block>;
   activePageId: string | null;
   loading: boolean;
+  nexusBlockCache: Record<string, string>; // pageId -> blockUuid
+  saveLocks: Record<string, boolean>; // pageId -> isSaving
+  setLoading: (loading: boolean) => void;
 
   // Core
   loadGraph: () => Promise<void>;
@@ -81,6 +84,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   blocks: {},
   activePageId: null,
   loading: true,
+  nexusBlockCache: {},
+  saveLocks: {},
+  setLoading: (loading) => set({ loading }),
 
   // ── Load all data from Supabase ────────────────────────────────────────────
   loadGraph: async () => {
@@ -90,11 +96,13 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
     const [{ data: cloudPages, error: pErr }, { data: cloudBlocks, error: bErr }] = await Promise.all([
       supabase.from('pages').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
-      supabase.from('blocks').select('*').eq('user_id', user.id),
+      supabase.from('blocks').select('*').eq('user_id', user.id).limit(5000),
     ]);
 
     if (pErr) console.error('loadGraph pages', pErr);
     if (bErr) console.error('loadGraph blocks', bErr);
+    
+    if (cloudBlocks) console.log(`Loaded ${cloudBlocks.length} blocks`);
 
     const pages: Record<string, Page> = {};
     (cloudPages ?? []).forEach(p => {
@@ -119,7 +127,14 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       };
     });
 
-    set({ pages, blocks, loading: false });
+    const nexusBlockCache: Record<string, string> = {};
+    Object.values(blocks).forEach(b => {
+      if (b.block_type === 'nexus_html') {
+        nexusBlockCache[b.page_id] = b.uuid;
+      }
+    });
+
+    set({ pages, blocks, nexusBlockCache, loading: false });
 
     // Build link index
     useLinkStore.getState().buildIndex(blocks, pages);
@@ -431,59 +446,71 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   // ── Nexus Editor: save TipTap HTML ─────────────────────────────────────────
   savePageContent: async (pageId, html) => {
+    const { nexusBlockCache, saveLocks } = get();
+    if (saveLocks[pageId]) return;
+
     const userId = useAuthStore.getState().user?.id;
     if (!userId) return;
 
-    // 1. Find existing nexus_html block in local state first
-    const { blocks } = get();
-    const existingLocal = Object.values(blocks).find(
-      b => b.page_id === pageId && b.block_type === 'nexus_html'
-    );
+    // Set lock
+    set(s => ({ saveLocks: { ...s.saveLocks, [pageId]: true } }));
 
-    if (existingLocal) {
-      const updated_at = Date.now();
-      // Optimistic update
-      set(s => ({
-        blocks: { ...s.blocks, [existingLocal.uuid]: { ...existingLocal, content: html, updated_at } }
-      }));
-      await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingLocal.uuid);
-      return;
-    }
+    try {
+      // 1. Check cache first
+      const cachedUuid = nexusBlockCache[pageId];
+      if (cachedUuid && get().blocks[cachedUuid]) {
+        const block = get().blocks[cachedUuid];
+        if (block.content === html) return; // Already current
 
-    // 2. Fallback: check DB if not found locally (unlikely but safe)
-    const { data: existingDB } = await supabase
-      .from('blocks')
-      .select('uuid')
-      .eq('page_id', pageId)
-      .eq('block_type', 'nexus_html' as any)
-      .maybeSingle();
+        const updated_at = Date.now();
+        // Optimistic update
+        set(s => ({
+          blocks: { ...s.blocks, [cachedUuid]: { ...block, content: html, updated_at } }
+        }));
+        await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', cachedUuid);
+        return;
+      }
 
-    if (existingDB) {
-      const updated_at = Date.now();
-      await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingDB.uuid);
-      set(s => ({
-        blocks: { ...s.blocks, [existingDB.uuid]: { ...s.blocks[existingDB.uuid], content: html, updated_at } }
-      }));
-    } else {
-      // 3. Create new block
-      const uuid = uuidv4();
-      const now = Date.now();
-      const newBlock: Block = {
-        uuid, page_id: pageId, user_id: userId, parent_id: null,
-        content: html, block_type: 'nexus_html', is_collapsed: false,
-        children: [], properties: {}, created_at: now, updated_at: now,
-      };
-      
-      // Update local state immediately
-      set(s => ({
-        blocks: { ...s.blocks, [uuid]: newBlock },
-        pages: {
-          ...s.pages,
-          [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
-        }
-      }));
-      
-      await supabase.from('blocks').insert(newBlock);
+      // 2. Fallback: Double check DB if not in cache (unlikely but safe)
+      const { data: existingDB } = await supabase
+        .from('blocks')
+        .select('uuid')
+        .eq('page_id', pageId)
+        .eq('block_type', 'nexus_html' as any)
+        .maybeSingle();
+
+      if (existingDB) {
+        const updated_at = Date.now();
+        await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingDB.uuid);
+        set(s => ({
+          blocks: { ...s.blocks, [existingDB.uuid]: { ...s.blocks[existingDB.uuid], content: html, updated_at } },
+          nexusBlockCache: { ...s.nexusBlockCache, [pageId]: existingDB.uuid }
+        }));
+      } else {
+        // 3. Create new block
+        const uuid = uuidv4();
+        const now = Date.now();
+        const newBlock: Block = {
+          uuid, page_id: pageId, user_id: userId, parent_id: null,
+          content: html, block_type: 'nexus_html', is_collapsed: false,
+          children: [], properties: {}, created_at: now, updated_at: now,
+        };
+        
+        // Update local state and cache immediately
+        set(s => ({
+          blocks: { ...s.blocks, [uuid]: newBlock },
+          nexusBlockCache: { ...s.nexusBlockCache, [pageId]: uuid },
+          pages: {
+            ...s.pages,
+            [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
+          }
+        }));
+        
+        await supabase.from('blocks').insert(newBlock);
+      }
+    } finally {
+      // Release lock
+      set(s => ({ saveLocks: { ...s.saveLocks, [pageId]: false } }));
     }
   },
 

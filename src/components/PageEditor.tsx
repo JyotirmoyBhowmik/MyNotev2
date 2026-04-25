@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
 import { useLinkStore } from '../store/linkStore';
@@ -26,8 +26,11 @@ export const PageEditor: React.FC = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
+  const loadingRef = useRef(false);
+
   useEffect(() => {
-    if (!init) {
+    if (!init && !loadingRef.current) {
+      loadingRef.current = true;
       loadGraph().then(async () => {
         const state = useGraphStore.getState();
         const pageIds = Object.keys(state.pages);
@@ -42,6 +45,7 @@ export const PageEditor: React.FC = () => {
           state.setActivePage(pageIds[0]);
         }
         setInit(true);
+        loadingRef.current = false;
       });
     }
   }, [init, loadGraph]);

@@ -433,35 +433,57 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   savePageContent: async (pageId, html) => {
     const userId = useAuthStore.getState().user?.id;
     if (!userId) return;
-    // Store as a single 'nexus_html' block keyed by page
-    const { data: existing } = await supabase
+
+    // 1. Find existing nexus_html block in local state first
+    const { blocks } = get();
+    const existingLocal = Object.values(blocks).find(
+      b => b.page_id === pageId && b.block_type === 'nexus_html'
+    );
+
+    if (existingLocal) {
+      const updated_at = Date.now();
+      // Optimistic update
+      set(s => ({
+        blocks: { ...s.blocks, [existingLocal.uuid]: { ...existingLocal, content: html, updated_at } }
+      }));
+      await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingLocal.uuid);
+      return;
+    }
+
+    // 2. Fallback: check DB if not found locally (unlikely but safe)
+    const { data: existingDB } = await supabase
       .from('blocks')
       .select('uuid')
       .eq('page_id', pageId)
       .eq('block_type', 'nexus_html' as any)
       .maybeSingle();
 
-    if (existing) {
-      await supabase.from('blocks').update({ content: html, updated_at: Date.now() }).eq('uuid', existing.uuid);
+    if (existingDB) {
+      const updated_at = Date.now();
+      await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingDB.uuid);
       set(s => ({
-        blocks: { ...s.blocks, [existing.uuid]: { ...s.blocks[existing.uuid], content: html } }
+        blocks: { ...s.blocks, [existingDB.uuid]: { ...s.blocks[existingDB.uuid], content: html, updated_at } }
       }));
     } else {
-      const uuid = crypto.randomUUID();
+      // 3. Create new block
+      const uuid = uuidv4();
       const now = Date.now();
-      const newBlock = {
+      const newBlock: Block = {
         uuid, page_id: pageId, user_id: userId, parent_id: null,
         content: html, block_type: 'nexus_html', is_collapsed: false,
         children: [], properties: {}, created_at: now, updated_at: now,
       };
-      await supabase.from('blocks').insert(newBlock);
+      
+      // Update local state immediately
       set(s => ({
-        blocks: { ...s.blocks, [uuid]: newBlock as any },
+        blocks: { ...s.blocks, [uuid]: newBlock },
         pages: {
           ...s.pages,
           [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
         }
       }));
+      
+      await supabase.from('blocks').insert(newBlock);
     }
   },
 

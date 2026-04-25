@@ -76,7 +76,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       TaskList,
       TaskItem.configure({ nested: true }),
     ],
-    content: buildInitialContent(),
+    content: '', // Start empty, useEffect will fill it
     autofocus: !readOnly,
     editable: !readOnly,
     editorProps: {
@@ -91,6 +91,12 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
         const html = editor.getHTML()
+        // Compare with existing nexus_html to avoid redundant saves
+        const currentNexus = Object.values(useGraphStore.getState().blocks).find(
+          b => b.page_id === pageId && b.block_type === 'nexus_html'
+        );
+        if (currentNexus && currentNexus.content === html) return;
+
         const toastId = toast.loading('Saving changes...', { icon: <Loader2 className="animate-spin" size={14} /> });
         try {
           await useGraphStore.getState().savePageContent(pageId, html)
@@ -100,15 +106,17 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         }
       }, 600) as unknown as number;
     },
-  }, [pageId, readOnly])
+  }, [pageId])
 
   // When page changes, reload content
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
+      // Only set content if we are switching pages
       editor.commands.setContent(buildInitialContent())
       editor.setEditable(!readOnly)
     }
-  }, [pageId, readOnly, editor, buildInitialContent])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId, readOnly, editor])
 
   if (!page || !editor) return null
 

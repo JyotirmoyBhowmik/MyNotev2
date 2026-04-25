@@ -120,7 +120,42 @@
   color: var(--text-3);
   text-align: center;
   margin: 0;
+  width: 100%;
 }
+.pending-hint strong { color: var(--text-2); }
+
+.pending-hint-sub {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  text-align: center;
+  margin: -6px 0 0;
+}
+.pending-hint-sub strong { color: var(--text-2); }
+
+.pending-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: var(--red);
+}
+
+.pending-debug {
+  width: 100%;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+}
+.pending-debug.approved { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+.pending-debug.waiting { background: rgba(251,191,36,0.08); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+
 .pending-sql {
   background: var(--code-bg);
   border: 1px solid var(--border-2);

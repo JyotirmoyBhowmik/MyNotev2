@@ -6,6 +6,48 @@
   background: var(--bg);
 }
 
+.page-editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.page-editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Split view */
+.page-editor-body.split {
+  gap: 1px;
+  background: var(--border);
+}
+
+.split-preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+
+.split-preview-label {
+  padding: 8px 48px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+.split-preview .page-editor { background: var(--bg-2); }
+.split-preview .page-content { pointer-events: none; }
+
 .page-editor {
   flex: 1;
   display: flex;

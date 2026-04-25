@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BacklinksPanel } from './BacklinksPanel';
-import { askGemini } from '../lib/gemini';
+import { askAI } from '../lib/ai';
 import { useGraphStore } from '../store/graphStore';
 import { Sparkles, Send, Loader2, Link as LinkIcon, MessageSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -25,7 +25,7 @@ export const Inspector: React.FC<InspectorProps> = ({ pageId }) => {
       const pageBlocks = Object.values(blocks).filter(b => b.page_id === pageId);
       const context = pageBlocks.map(b => b.content).join('\n');
       
-      const response = await askGemini(prompt, context);
+      const response = await askAI(prompt, context);
       setAiResponse(response);
     } catch (err: any) {
       setAiResponse(`Error: ${err.message}`);

@@ -29,7 +29,7 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
           <ResizablePanel
             defaultSize={20}
             minSize={2}
-            maxSize={98}
+            maxSize={260}
             id="sidebar-panel"
           >
             <div className="h-full flex flex-col">

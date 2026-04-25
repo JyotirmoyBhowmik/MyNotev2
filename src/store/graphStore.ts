@@ -96,28 +96,28 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     if (pErr) console.error('loadGraph pages', pErr);
     if (bErr) console.error('loadGraph blocks', bErr);
 
-    const pages = (cloudPages ?? []).reduce<Record<string, Page>>((acc, p) => ({
-      ...acc,
-      [p.id]: {
+    const pages: Record<string, Page> = {};
+    (cloudPages ?? []).forEach(p => {
+      pages[p.id] = {
         ...p,
         root_blocks: p.root_blocks ?? [],
         tags: p.tags ?? [],
         is_favorite: p.is_favorite ?? false,
         parent_page_id: p.parent_page_id ?? null,
         icon: p.icon ?? null,
-      }
-    }), {});
+      };
+    });
 
-    const blocks = (cloudBlocks ?? []).reduce<Record<string, Block>>((acc, b) => ({
-      ...acc,
-      [b.uuid]: {
+    const blocks: Record<string, Block> = {};
+    (cloudBlocks ?? []).forEach(b => {
+      blocks[b.uuid] = {
         ...b,
         children: b.children ?? [],
         properties: b.properties ?? {},
         block_type: b.block_type ?? 'text',
         is_collapsed: b.is_collapsed ?? false,
-      }
-    }), {});
+      };
+    });
 
     set({ pages, blocks, loading: false });
 

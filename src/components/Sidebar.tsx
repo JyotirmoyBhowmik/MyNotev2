@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { useGraphStore } from '../store/graphStore';
+import React, { useState, useMemo } from 'react';
+import { useGraphStore, Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
-import { LogOut, FileText, Plus, Star, Calendar, Search, ChevronRight, ChevronDown, Settings, Trash2, Edit3, Target } from 'lucide-react';
+import { 
+  LogOut, FileText, Plus, Star, Calendar, Search, 
+  ChevronRight, ChevronDown, Settings, Trash2, 
+  Edit3, Target, HelpCircle, FolderPlus 
+} from 'lucide-react';
 import { cn } from '../lib/utils';
 import './Sidebar.css';
 
@@ -12,11 +16,20 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
-  const { pages, activePageId, setActivePage, createPage, deletePage, renamePage, createDailyPage } = useGraphStore();
+  const { 
+    pages, activePageId, setActivePage, createPage, 
+    deletePage, renamePage, createDailyPage 
+  } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
-  const { setCommandPaletteOpen, setJournalOpen, setStrategyOpen, strategyOpen, journalOpen } = useUIStore();
+  const { 
+    setCommandPaletteOpen, setJournalOpen, setStrategyOpen, 
+    strategyOpen, journalOpen 
+  } = useUIStore();
 
-  const [expandedSections, setExpandedSections] = useState({ favorites: true, pages: true, journal: true });
+  const [expandedSections, setExpandedSections] = useState({ 
+    favorites: true, pages: true, journal: true 
+  });
+  const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
   const [contextPage, setContextPage] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
@@ -24,16 +37,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const allPages = Object.values(pages);
   const favoritePages = allPages.filter(p => p.is_favorite);
   const journalPages = allPages.filter(p => p.type === 'journal').sort((a, b) => b.created_at - a.created_at);
-  const normalPages = allPages.filter(p => p.type === 'normal' && !p.parent_page_id);
+  
+  // Group pages by parent
+  const pageTree = useMemo(() => {
+    const tree: Record<string, Page[]> = { root: [] };
+    allPages.forEach(p => {
+      if (p.type === 'journal') return;
+      if (p.parent_page_id) {
+        if (!tree[p.parent_page_id]) tree[p.parent_page_id] = [];
+        tree[p.parent_page_id].push(p);
+      } else {
+        tree.root.push(p);
+      }
+    });
+    return tree;
+  }, [pages]);
 
   const toggleSection = (key: keyof typeof expandedSections) =>
     setExpandedSections(s => ({ ...s, [key]: !s[key] }));
 
-  const handleNewPage = async () => {
+  const togglePageExpand = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedPages(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleNewPage = async (parentId: string | null = null) => {
     const title = prompt('Page title:');
     if (title) {
-      const page = await createPage(title);
+      const page = await createPage(title, 'normal', parentId);
       setActivePage(page.id);
+      if (parentId) setExpandedPages(prev => ({ ...prev, [parentId]: true }));
     }
   };
 
@@ -49,40 +82,65 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     setRenaming(null);
   };
 
-  const PageItem = ({ page }: { page: any }) => (
-    <div
-      key={page.id}
-      className={`sidebar-item ${activePageId === page.id ? 'active' : ''}`}
-      onClick={() => setActivePage(page.id)}
-      onContextMenu={(e) => { e.preventDefault(); setContextPage(page.id); }}
-    >
-      <span className="sidebar-item-icon">{page.icon || (page.type === 'journal' ? '📅' : '📄')}</span>
-      {renaming === page.id ? (
-        <input
-          className="sidebar-rename-input"
-          value={renameDraft}
-          onChange={e => setRenameDraft(e.target.value)}
-          onBlur={() => handleRename(page.id)}
-          onKeyDown={e => { if (e.key === 'Enter') handleRename(page.id); if (e.key === 'Escape') setRenaming(null); }}
-          autoFocus
-          onClick={e => e.stopPropagation()}
-        />
-      ) : (
-        <span className="sidebar-item-label">{page.title}</span>
-      )}
-      {contextPage === page.id && (
-        <div className="sidebar-context-menu" onClick={e => e.stopPropagation()}>
-          <button onClick={() => { setRenaming(page.id); setRenameDraft(page.title); setContextPage(null); }}>
-            <Edit3 size={12} /> Rename
-          </button>
-          <button onClick={() => handleDelete(page.id)} className="danger">
-            <Trash2 size={12} /> Delete
-          </button>
-          <button onClick={() => setContextPage(null)}>Cancel</button>
+  const PageItem = ({ page, depth = 0 }: { page: Page; depth?: number }) => {
+    const hasChildren = pageTree[page.id] && pageTree[page.id].length > 0;
+    const isExpanded = expandedPages[page.id];
+
+    return (
+      <div className="page-tree-node">
+        <div
+          className={`sidebar-item ${activePageId === page.id ? 'active' : ''}`}
+          style={{ paddingLeft: `${depth * 12 + 12}px` }}
+          onClick={() => setActivePage(page.id)}
+          onContextMenu={(e) => { e.preventDefault(); setContextPage(page.id); }}
+        >
+          <span className="sidebar-item-expander" onClick={(e) => togglePageExpand(page.id, e)}>
+            {hasChildren ? (
+              isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />
+            ) : (
+              <span className="w-3" />
+            )}
+          </span>
+          <span className="sidebar-item-icon">{page.icon || '📄'}</span>
+          {renaming === page.id ? (
+            <input
+              className="sidebar-rename-input"
+              value={renameDraft}
+              onChange={e => setRenameDraft(e.target.value)}
+              onBlur={() => handleRename(page.id)}
+              onKeyDown={e => { if (e.key === 'Enter') handleRename(page.id); if (e.key === 'Escape') setRenaming(null); }}
+              autoFocus
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <span className="sidebar-item-label">{page.title}</span>
+          )}
+          
+          {contextPage === page.id && (
+            <div className="sidebar-context-menu" onClick={e => e.stopPropagation()}>
+              <button onClick={() => handleNewPage(page.id)}>
+                <FolderPlus size={12} /> New Sub-page
+              </button>
+              <button onClick={() => { setRenaming(page.id); setRenameDraft(page.title); setContextPage(null); }}>
+                <Edit3 size={12} /> Rename
+              </button>
+              <button onClick={() => handleDelete(page.id)} className="danger">
+                <Trash2 size={12} /> Delete
+              </button>
+              <button onClick={() => setContextPage(null)}>Cancel</button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  );
+        {isExpanded && hasChildren && (
+          <div className="page-tree-children">
+            {pageTree[page.id].map(child => (
+              <PageItem key={child.id} page={child} depth={depth + 1} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="sidebar" onClick={() => setContextPage(null)}>
@@ -99,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
 
       {/* Quick Actions */}
       <div className="sidebar-quick">
-        <button className="sidebar-quick-btn" onClick={handleNewPage}>
+        <button className="sidebar-quick-btn" onClick={() => handleNewPage(null)}>
           <Plus size={14} /> New
         </button>
         <button className="sidebar-quick-btn" onClick={async () => await createDailyPage()}>
@@ -121,18 +179,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               {expandedSections.favorites ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
               <Star size={12} /> Favorites
             </div>
-            {expandedSections.favorites && favoritePages.map(p => <PageItem key={p.id} page={p} />)}
+            {expandedSections.favorites && favoritePages.map(p => (
+              <div key={p.id} className="sidebar-item" onClick={() => setActivePage(p.id)}>
+                <span className="sidebar-item-icon">{p.icon || '📄'}</span>
+                <span className="sidebar-item-label">{p.title}</span>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Pages */}
+        {/* Pages (Multi-level Tree) */}
         <div className="sidebar-section">
           <div className="sidebar-section-title" onClick={() => toggleSection('pages')}>
             {expandedSections.pages ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             <FileText size={12} /> Pages
           </div>
-          {expandedSections.pages && normalPages.map(p => <PageItem key={p.id} page={p} />)}
-          {expandedSections.pages && normalPages.length === 0 && (
+          {expandedSections.pages && pageTree.root.map(p => <PageItem key={p.id} page={p} />)}
+          {expandedSections.pages && pageTree.root.length === 0 && (
             <div className="sidebar-empty">No pages yet</div>
           )}
         </div>
@@ -144,9 +207,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               {expandedSections.journal ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
               <Calendar size={12} /> Journal
             </div>
-            {expandedSections.journal && journalPages.slice(0, 7).map(p => <PageItem key={p.id} page={p} />)}
+            {expandedSections.journal && journalPages.slice(0, 7).map(p => (
+               <div key={p.id} className="sidebar-item" onClick={() => setActivePage(p.id)}>
+                <span className="sidebar-item-icon">📅</span>
+                <span className="sidebar-item-label">{p.title}</span>
+              </div>
+            ))}
           </div>
         )}
+
+        {/* Features Guide */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-title text-[10px] uppercase tracking-widest opacity-50 mt-4">
+            Help & Info
+          </div>
+          <button className="sidebar-item text-accent" onClick={() => alert('Features:\n1. Multi-level Folders: Right-click pages to create sub-pages.\n2. Journal: Click "Today" or "Journal" for daily notes.\n3. Strategy: Click "Strategy" for OKR dashboard.\n4. Search: Press Ctrl+K or click the search icon.\n5. Editor Commands: Type "/" in any page for blocks.')}>
+            <HelpCircle size={12} /> Features Guide
+          </button>
+        </div>
       </div>
 
       {/* Footer */}
@@ -170,3 +248,5 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     </div>
   );
 };
+
+export default Sidebar;

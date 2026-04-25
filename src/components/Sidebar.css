@@ -113,12 +113,31 @@
 .sidebar-item.active { background: var(--active); color: var(--text-1); border-left: 2px solid var(--accent); }
 
 .sidebar-item-icon { font-size: 0.85rem; flex-shrink: 0; }
+
+.sidebar-item-expander {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.1s;
+}
+.sidebar-item-expander:hover { background: var(--active); color: var(--text-1); }
+
 .sidebar-item-label { 
   flex: 1; 
   overflow: hidden; 
   text-overflow: ellipsis; 
   white-space: nowrap; 
   padding-right: 4px;
+}
+
+.page-tree-children {
+  border-left: 1px solid var(--border-2);
+  margin-left: 18px;
 }
 
 .sidebar-rename-input {

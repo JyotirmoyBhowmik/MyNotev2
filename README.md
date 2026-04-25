@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# MyNote v2 🧠
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A premium, networked-thought note-taking application built with **React**, **Supabase**, and **TipTap**. MyNote combines the speed of block-based editing with the power of graph-based knowledge management.
 
-Currently, two official plugins are available:
+![MyNote Banner](https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=2071)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Key Features
 
-## React Compiler
+### 1. Multi-level Networked Knowledge
+- **Nested Pages**: Organize your thoughts with an unlimited hierarchy of folders and sub-pages.
+- **Bi-directional Linking**: Link blocks and pages seamlessly using the `((` trigger.
+- **Real-time Sync**: Collaborative editing and instant cloud saving powered by Supabase Realtime.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 2. High-Performance Nexus Editor
+- **Block-based Architecture**: Every paragraph is a discrete data point.
+- **Slash Commands**: Type `/` to insert headings, task lists, code blocks, images, and more.
+- **Markdown Support**: Intuitive formatting that stays out of your way.
 
-## Expanding the ESLint configuration
+### 3. Integrated Tools
+- **Journal**: Automatic daily pages for rapid logging and habit tracking.
+- **OKR & Strategy**: Track your high-level goals and key results directly alongside your notes.
+- **Interactive Graph View**: Visualize the connections between your ideas in 2D space.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 4. Enterprise-Grade Foundation
+- **Role-Based Access Control**: Secure admin panel for user and system management.
+- **Optimized Layout**: Fully resizable panels with persistent state.
+- **Dark Mode First**: Premium aesthetic designed for long-term focus.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Quick Start
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/JyotirmoyBhowmik/MyNotev2.git
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Key Commands
+- `Ctrl + K` or `Cmd + K`: Open Global Search / Command Palette.
+- `/`: Open block menu in the editor.
+- `((`: Search and link another page or block.
+- `Tab` / `Shift + Tab`: Indent or outdent blocks.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🛠️ Tech Stack
+- **Frontend**: Vite, React 18, Tailwind CSS, Lucide Icons.
+- **Editor**: TipTap (Headless Prosemirror).
+- **Backend**: Supabase (PostgreSQL, Auth, Realtime).
+- **State Management**: Zustand.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+Built with ❤️ by [Jyotirmoy Bhowmik](https://github.com/JyotirmoyBhowmik)

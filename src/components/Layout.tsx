@@ -32,10 +32,10 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
         >
           {/* Left Sidebar: Navigation Tree */}
           <ResizablePanel
-            defaultSize={40}
-            minSize={15}
-            maxSize={85}
-            id="sidebar-panel-v3"
+            defaultSize={25}
+            minSize={0}
+            maxSize={100}
+            id="sidebar-panel-v4"
           >
             <div className="h-full flex flex-col">
               <Sidebar onOpenAdmin={onOpenAdmin} isAdmin={isAdmin} />

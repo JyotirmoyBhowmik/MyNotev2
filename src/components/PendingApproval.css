@@ -1,0 +1,177 @@
+/* ── Pending Approval Page ─────────────────────────────────────────────── */
+.pending-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background blobs */
+.pending-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  animation: blobPulse 6s ease-in-out infinite alternate;
+}
+.pending-blob-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--accent);
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+.pending-blob-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--purple);
+  bottom: -80px;
+  right: -60px;
+  animation-delay: 3s;
+}
+
+
+/* Card */
+.pending-card {
+  position: relative;
+  z-index: 1;
+  width: 440px;
+  max-width: 90vw;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Icon */
+.pending-icon-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pending-icon {
+  color: var(--orange);
+  z-index: 1;
+}
+.pending-icon-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--orange);
+  opacity: 0.3;
+  animation: ringPulse 2s ease-in-out infinite;
+}
+
+
+.pending-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-1);
+  text-align: center;
+  margin: 0;
+}
+
+.pending-desc {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  text-align: center;
+  line-height: 1.7;
+  margin: 0;
+}
+.pending-desc strong { color: var(--accent); font-weight: 500; }
+
+/* Steps */
+.pending-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  background: var(--hover);
+}
+.pending-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.pending-step.done { color: var(--green); }
+.pending-step.pending { color: var(--text-3); }
+
+/* SQL hint */
+.pending-hint {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  text-align: center;
+  margin: 0;
+}
+.pending-sql {
+  background: var(--code-bg);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  width: 100%;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.pending-sql code {
+  color: var(--orange);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Actions */
+.pending-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.pending-check-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.pending-check-btn:hover:not(:disabled) { background: #4a79e4; }
+.pending-check-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.pending-signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  transition: all 0.15s;
+}
+.pending-signout-btn:hover { background: var(--hover); color: var(--text-1); }
+
+/* Spinning animation */
+.spinning { animation: spin 0.8s linear infinite; }

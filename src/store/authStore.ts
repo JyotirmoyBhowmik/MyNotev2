@@ -16,6 +16,7 @@ interface AuthState {
   profile: Profile | null;
   loading: boolean;
   initAuth: () => void;
+  checkApproval: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -47,7 +48,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     await supabase.auth.signOut();
     set({ user: null, profile: null });
-  }
+  },
+
+  checkApproval: async () => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    await fetchProfile(user.id, set);
+  },
 }));
 
 async function fetchProfile(userId: string, set: any) {

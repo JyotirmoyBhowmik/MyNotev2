@@ -26,13 +26,16 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
   const page = pages[pageId]
   const saveTimer = useRef<number | undefined>(undefined)
 
-  // Build initial content from page blocks (markdown → HTML → TipTap doc)
   // ── Stable Initial Content ────────────────────────────────────────────────
   const blocksRef = useRef(blocks)
-  useEffect(() => { blocksRef.current = blocks }, [blocks])
+  const pagesRef = useRef(pages)
+  useEffect(() => { 
+    blocksRef.current = blocks 
+    pagesRef.current = pages
+  }, [blocks, pages])
 
   const buildInitialContent = useCallback(() => {
-    const page = pages[pageId]
+    const page = pagesRef.current[pageId]
     if (!page) return '<p></p>'
     
     // Use the ref to avoid buildInitialContent identity changing on every save
@@ -62,7 +65,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         }
       })
       .join('') || '<p></p>'
-  }, [pageId, pages])
+  }, [pageId])
 
   const lastSavedContent = useRef<string | null>(null)
   const isSaving = useRef(false)
@@ -139,14 +142,14 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     // Only set content if the page actually changed or it's the first load
     if (pageId !== lastPageId.current) {
       const initial = buildInitialContent()
-      console.log('NexusEditor: Initializing content for page', pageId, 'length:', initial.length);
+      console.log('NexusEditor: Setting content for page', pageId);
       editor.commands.setContent(initial)
       lastSavedContent.current = initial
       lastPageId.current = pageId
     }
     
     editor.setEditable(!readOnly)
-  }, [pageId, readOnly, editor, buildInitialContent])
+  }, [pageId, readOnly, editor])
 
   if (!page || !editor) return null
 

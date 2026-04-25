@@ -447,7 +447,10 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   // ── Nexus Editor: save TipTap HTML ─────────────────────────────────────────
   savePageContent: async (pageId, html) => {
     const { nexusBlockCache, saveLocks } = get();
-    if (saveLocks[pageId]) return;
+    if (saveLocks[pageId]) {
+      console.log('NexusSave: Locked for page', pageId);
+      return;
+    }
 
     const userId = useAuthStore.getState().user?.id;
     if (!userId) return;
@@ -460,8 +463,12 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       const cachedUuid = nexusBlockCache[pageId];
       if (cachedUuid && get().blocks[cachedUuid]) {
         const block = get().blocks[cachedUuid];
-        if (block.content === html) return; // Already current
+        if (block.content === html) {
+          console.log('NexusSave: Content unchanged, skipping');
+          return;
+        }
 
+        console.log('NexusSave: Updating existing block', cachedUuid);
         const updated_at = Date.now();
         // Optimistic update
         set(s => ({
@@ -471,6 +478,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         return;
       }
 
+      console.log('NexusSave: Block not in cache, checking DB...');
       // 2. Fallback: Double check DB if not in cache (unlikely but safe)
       const { data: existingDB } = await supabase
         .from('blocks')
@@ -480,6 +488,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         .maybeSingle();
 
       if (existingDB) {
+        console.log('NexusSave: Found existing block in DB', existingDB.uuid);
         const updated_at = Date.now();
         await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', existingDB.uuid);
         set(s => ({
@@ -487,6 +496,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           nexusBlockCache: { ...s.nexusBlockCache, [pageId]: existingDB.uuid }
         }));
       } else {
+        console.log('NexusSave: Creating new block for page', pageId);
         // 3. Create new block
         const uuid = uuidv4();
         const now = Date.now();

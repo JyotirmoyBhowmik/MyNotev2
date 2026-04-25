@@ -15,7 +15,7 @@ import {
 import { BlockReference } from '../extensions/BlockReference'
 import './NexusEditor.css'
 
-// ─── Extensions (Static array to avoid re-registration) ────────────────────────
+// ─── Extensions (Static array) ──────────────────────────────────────────────
 const SHARED_EXTENSIONS = [
   StarterKit.configure({
     codeBlock: false,
@@ -51,7 +51,8 @@ const ToolbarBtn = memo(({
 ));
 
 export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = false }) => {
-  console.log('[NexusEditor] Rendering version v2.1 for page:', pageId);
+  // v2.2 - Stabilized against parent re-renders
+  console.log('[NexusEditor] Init v2.2 for page:', pageId);
   
   const saveTimer = useRef<number | undefined>(undefined)
   const lastSavedContent = useRef<string | null>(null)
@@ -90,11 +91,10 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       .join('') || '<p></p>'
   }, [pageId])
 
-  // Explicitly memoize options to ensure TipTap never sees a new object unless page changes
   const editorOptions = useMemo(() => ({
     extensions: SHARED_EXTENSIONS,
     content: buildInitialContent(),
-    autofocus: !readOnly,
+    autofocus: false, // Prevent auto-scroll on mount which might trigger events
     editable: !readOnly,
     editorProps: {
       attributes: { class: 'tiptap nexus-editor-content' },
@@ -103,6 +103,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       if (readOnly) return;
       
       const html = editor.getHTML()
+      // Strict equality check to avoid triggering saves on meta-updates (like setEditable)
       if (html === lastSavedContent.current) return;
 
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -121,15 +122,29 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         }
       }, 1000) as unknown as number;
     },
-  }), [pageId]); // Re-calculate ONLY when page switches
+  }), [pageId]); // Options ONLY change if page switches
 
-  const editor = useEditor(editorOptions, [pageId])
+  const editor = useEditor(editorOptions)
 
+  // Use a ref to track current editable state to avoid redundant calls
+  const currentEditable = useRef(!readOnly);
+  useEffect(() => {
+    if (editor && !editor.isDestroyed && currentEditable.current !== !readOnly) {
+      editor.setEditable(!readOnly);
+      currentEditable.current = !readOnly;
+    }
+  }, [readOnly, editor]);
+
+  // Handle page content syncing if it changes externally (rare for NexusEditor)
   useEffect(() => {
     if (editor && !editor.isDestroyed) {
-      editor.setEditable(!readOnly)
+      const content = buildInitialContent();
+      if (content !== editor.getHTML()) {
+        editor.commands.setContent(content, false);
+        lastSavedContent.current = content;
+      }
     }
-  }, [readOnly, editor])
+  }, [pageId, editor, buildInitialContent]);
 
   if (!pageId || !editor) return null
 

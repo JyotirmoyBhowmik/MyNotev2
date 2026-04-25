@@ -5,6 +5,7 @@ import { useUIStore } from '../store/uiStore';
 import { useDrag, useDrop } from 'react-dnd';
 import { parseInlineContent } from '../hooks/useInlineFormat';
 import { ChevronRight, GripVertical, Plus } from 'lucide-react';
+import { DatabaseView } from './database/DatabaseView';
 import './BlockNode.css';
 
 interface BlockNodeProps {
@@ -214,6 +215,7 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
       image: '',
       file: '',
       nexus_html: '',
+      database: 'Database View',
     };
     return placeholders[block.block_type] || "Type '/' for commands...";
   };
@@ -247,6 +249,8 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
       <div className="block-body">
         {block.block_type === 'divider' ? (
           <hr className="block-divider" />
+        ) : block.block_type === 'database' ? (
+          <DatabaseView blockId={uuid} />
         ) : block.block_type === 'image' ? (
           <div className="block-image-wrap">
             <img

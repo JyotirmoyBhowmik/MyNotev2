@@ -1,16 +1,19 @@
 /* ── Layout ────────────────────────────────────────────────────────────── */
 .app-layout {
   display: flex;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
-  position: relative;
+  background: var(--bg);
 }
 
 .main-content {
   flex: 1;
-  overflow: hidden;
   display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  min-width: 0;
+  position: relative;
 }
 
 /* Graph toggle floating button */

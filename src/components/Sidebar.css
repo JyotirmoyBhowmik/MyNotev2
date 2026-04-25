@@ -1,7 +1,7 @@
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 100%;
+  min-width: 0;
   height: 100vh;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);

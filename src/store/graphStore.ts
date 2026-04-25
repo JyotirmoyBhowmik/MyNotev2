@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 export type BlockType =
   | 'text' | 'heading1' | 'heading2' | 'heading3'
   | 'bullet' | 'numbered' | 'toggle' | 'code'
-  | 'quote' | 'callout' | 'divider' | 'image' | 'file' | 'nexus_html';
+  | 'quote' | 'callout' | 'divider' | 'image' | 'file' | 'nexus_html' | 'database';
 
 export interface Block {
   uuid: string;

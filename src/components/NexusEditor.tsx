@@ -11,7 +11,9 @@ import { useGraphStore } from '../store/graphStore'
 import {
   Bold, Italic, Code, Strikethrough, Link2, List, ListOrdered,
   Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo,
+  Loader2, CheckCircle2
 } from 'lucide-react'
+import { toast } from 'sonner'
 import './NexusEditor.css'
 
 interface NexusEditorProps {
@@ -85,9 +87,15 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       if (readOnly) return;
       // Debounced auto-save — 600ms after last keystroke
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
+      saveTimer.current = setTimeout(async () => {
         const html = editor.getHTML()
-        useGraphStore.getState().savePageContent(pageId, html)
+        const toastId = toast.loading('Saving changes...', { icon: <Loader2 className="animate-spin" size={14} /> });
+        try {
+          await useGraphStore.getState().savePageContent(pageId, html)
+          toast.success('Changes saved', { id: toastId, icon: <CheckCircle2 size={14} className="text-green" /> });
+        } catch (err) {
+          toast.error('Failed to save', { id: toastId });
+        }
       }, 600) as unknown as number;
     },
   }, [pageId, readOnly])

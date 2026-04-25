@@ -5,7 +5,6 @@ import { useLinkStore } from '../store/linkStore';
 import { BlockMenu } from './BlockMenu';
 import { CommandPalette } from './CommandPalette';
 import { ContextMenu } from './ContextMenu';
-import { BacklinksPanel } from './BacklinksPanel';
 import { JournalView } from './JournalView';
 import { TopBar } from './TopBar';
 import { TemplateModal } from './TemplateModal';
@@ -199,12 +198,6 @@ export const PageEditor: React.FC = () => {
         </div>
       </div>
 
-      {/* Right sidebar */}
-      {rightSidebarOpen && (
-        <div className="right-sidebar">
-          <BacklinksPanel pageId={activePageId} />
-        </div>
-      )}
 
       {/* Overlays */}
       <BlockMenu />

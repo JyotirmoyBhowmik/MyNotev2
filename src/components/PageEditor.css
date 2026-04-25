@@ -191,8 +191,8 @@
 
 /* Right Sidebar */
 .right-sidebar {
-  width: 280px;
-  min-width: 280px;
+  width: 100%;
+  min-width: 0;
   border-left: 1px solid var(--border);
   height: 100vh;
   overflow-y: auto;

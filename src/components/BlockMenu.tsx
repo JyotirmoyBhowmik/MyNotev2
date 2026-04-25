@@ -4,7 +4,7 @@ import { useGraphStore } from '../store/graphStore';
 import type { BlockType } from '../store/graphStore';
 import {
   Type, Heading1, Heading2, Heading3, List, ListOrdered,
-  ChevronRight, Code2, Quote, AlertCircle, Minus
+  ChevronRight, Code2, Quote, AlertCircle, Minus, Table as TableIcon
 } from 'lucide-react';
 import './BlockMenu.css';
 
@@ -28,6 +28,7 @@ const BLOCK_OPTIONS: BlockMenuOption[] = [
   { type: 'quote',    icon: <Quote size={16}/>,        label: 'Quote',     description: 'Blockquote',            keywords: ['quote','blockquote','>'] },
   { type: 'callout',  icon: <AlertCircle size={16}/>,  label: 'Callout',   description: 'Highlighted callout',   keywords: ['callout','note','info','warning'] },
   { type: 'divider',  icon: <Minus size={16}/>,        label: 'Divider',   description: 'Horizontal rule',       keywords: ['divider','hr','---','separator'] },
+  { type: 'database', icon: <TableIcon size={16}/>,    label: 'Database',  description: 'Structured collection', keywords: ['database','table','db','collection'] },
 ];
 
 export const BlockMenu: React.FC = () => {

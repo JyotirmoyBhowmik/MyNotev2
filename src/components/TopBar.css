@@ -12,6 +12,19 @@
   flex-shrink: 0;
 }
 
+.topbar-upload-status {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  background: var(--hover);
+  border-radius: 4px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Breadcrumb */
 .topbar-breadcrumb {
   display: flex;

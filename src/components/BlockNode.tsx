@@ -195,9 +195,14 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
       quote: 'Quote...',
       callout: 'Callout...',
       divider: '',
+      image: '',
+      file: '',
     };
     return placeholders[block.block_type] || "Type '/' for commands...";
   };
+
+  // Is this a media block (non-editable)?
+  const isMediaBlock = block.block_type === 'image' || block.block_type === 'file';
 
   return (
     <div
@@ -226,14 +231,42 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
 
       {/* Content area */}
       <div className="block-body">
-        {block.block_type === ('divider' as string) ? (
+        {block.block_type === 'divider' ? (
           <hr className="block-divider" />
+        ) : block.block_type === 'image' ? (
+          <div className="block-image-wrap">
+            <img
+              src={block.content}
+              alt="Uploaded image"
+              className="block-image"
+              loading="lazy"
+              onClick={() => window.open(block.content, '_blank')}
+            />
+            <button
+              className="block-image-delete"
+              onClick={() => deleteBlock(uuid)}
+              title="Remove"
+            >✕</button>
+          </div>
+        ) : block.block_type === 'file' ? (
+          <div className="block-file">
+            <span className="block-file-icon">📎</span>
+            <a
+              href={block.content.match(/\((.+?)\)/)?.[1] || block.content}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block-file-link"
+            >
+              {block.content.match(/\[(.+?)\]/)?.[1] || block.content}
+            </a>
+            <button className="block-file-delete" onClick={() => deleteBlock(uuid)} title="Remove">✕</button>
+          </div>
         ) : (
           <div
             id={`block-${uuid}`}
             ref={contentRef}
             className={getBlockClassName()}
-            contentEditable={block.block_type !== 'divider'}
+            contentEditable
             suppressContentEditableWarning
             onKeyDown={handleKeyDown}
             onInput={handleInput}

@@ -1,0 +1,146 @@
+/* ── Journal View ────────────────────────────────────────────────────────── */
+.journal-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.journal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-1);
+}
+
+.journal-close {
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  transition: all 0.15s;
+}
+.journal-close:hover { background: var(--hover); color: var(--text-1); }
+
+.journal-content {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Calendar */
+.journal-calendar {
+  width: 320px;
+  padding: 20px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.cal-header button {
+  padding: 5px;
+  border-radius: 5px;
+  color: var(--text-3);
+  transition: all 0.15s;
+}
+.cal-header button:hover { background: var(--hover); color: var(--text-1); }
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.cal-weekday {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  padding: 4px 0;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-empty { height: 36px; }
+
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-2);
+  transition: all 0.15s;
+  position: relative;
+  gap: 2px;
+}
+.cal-day:hover { background: var(--hover); color: var(--text-1); }
+.cal-day.today { background: var(--accent-glow); color: var(--accent); font-weight: 600; }
+.cal-day.has-entry { color: var(--text-1); }
+
+.cal-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: block;
+}
+
+/* Recent entries */
+.journal-entries {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.journal-entries-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+.journal-entry {
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.journal-entry:hover { background: var(--hover); border-color: var(--border-2); }
+
+.journal-entry-date {
+  font-size: 0.88rem;
+  color: var(--text-1);
+}
+
+.journal-empty {
+  color: var(--text-3);
+  font-size: 0.85rem;
+  font-style: italic;
+}

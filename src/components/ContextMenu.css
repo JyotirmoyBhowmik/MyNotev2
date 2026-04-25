@@ -1,0 +1,42 @@
+/* ── Context Menu ────────────────────────────────────────────────────────── */
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  min-width: 180px;
+  padding: 4px;
+  animation: fadeIn 0.1s ease;
+}
+
+.context-section-label {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  color: var(--text-2);
+  border-radius: 4px;
+  transition: all 0.1s;
+}
+.context-item:hover { background: var(--hover); color: var(--text-1); }
+.context-item.danger { color: var(--red); }
+.context-item.danger:hover { background: rgba(248,113,113,0.08); }
+
+.context-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}

@@ -1,0 +1,64 @@
+/* ── Backlinks Panel ─────────────────────────────────────────────────────── */
+.backlinks-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.backlinks-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.backlinks-count {
+  margin-left: auto;
+  background: var(--border-2);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  color: var(--text-3);
+}
+
+.backlinks-empty {
+  color: var(--text-3);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.backlinks-hint { margin-top: 4px; }
+.backlinks-hint code { background: var(--code-bg); padding: 1px 4px; border-radius: 3px; font-size: 0.8em; }
+
+.backlinks-group { display: flex; flex-direction: column; gap: 4px; }
+
+.backlinks-page {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.backlinks-page:hover { text-decoration: underline; }
+
+.backlinks-block {
+  font-size: 0.8rem;
+  color: var(--text-2);
+  line-height: 1.5;
+  padding: 6px 10px;
+  background: var(--hover);
+  border-radius: 5px;
+  cursor: pointer;
+  border-left: 2px solid var(--border-2);
+  transition: all 0.1s;
+}
+.backlinks-block:hover { border-left-color: var(--accent); background: var(--active); }
+.backlinks-block mark { background: rgba(91,138,245,0.25); color: var(--accent); border-radius: 2px; padding: 0 2px; }

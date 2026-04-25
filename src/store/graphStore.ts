@@ -1,9 +1,16 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
+import { useLinkStore } from './linkStore';
 import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export type BlockType =
+  | 'text' | 'heading1' | 'heading2' | 'heading3'
+  | 'bullet' | 'numbered' | 'toggle' | 'code'
+  | 'quote' | 'callout' | 'divider';
 
 export interface Block {
   uuid: string;
@@ -13,6 +20,8 @@ export interface Block {
   content: string;
   children: string[];
   properties: Record<string, any>;
+  block_type: BlockType;
+  is_collapsed: boolean;
   created_at: number;
   updated_at: number;
 }
@@ -23,6 +32,10 @@ export interface Page {
   title: string;
   type: 'normal' | 'journal';
   root_blocks: string[];
+  is_favorite: boolean;
+  parent_page_id: string | null;
+  tags: string[];
+  icon: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -32,15 +45,29 @@ interface GraphState {
   blocks: Record<string, Block>;
   activePageId: string | null;
   loading: boolean;
+
+  // Core
   loadGraph: () => Promise<void>;
-  createPage: (title: string, type?: 'normal' | 'journal') => Promise<Page>;
   setActivePage: (id: string) => void;
-  addBlock: (pageId: string, parentId: string | null, index: number, content?: string) => Promise<Block>;
+
+  // Pages
+  createPage: (title: string, type?: 'normal' | 'journal', parentId?: string | null) => Promise<Page>;
+  deletePage: (id: string) => Promise<void>;
+  renamePage: (id: string, title: string) => Promise<void>;
+  favoritePage: (id: string, val: boolean) => Promise<void>;
+  updatePageIcon: (id: string, icon: string) => Promise<void>;
+  createDailyPage: () => Promise<Page>;
+
+  // Blocks
+  addBlock: (pageId: string, parentId: string | null, index: number, content?: string, type?: BlockType) => Promise<Block>;
   updateBlock: (uuid: string, content: string) => Promise<void>;
+  updateBlockType: (uuid: string, type: BlockType) => Promise<void>;
   deleteBlock: (uuid: string) => Promise<void>;
   moveBlock: (uuid: string, newParentId: string | null, newIndex: number) => Promise<void>;
   indentBlock: (uuid: string) => Promise<void>;
   outdentBlock: (uuid: string) => Promise<void>;
+  toggleCollapse: (uuid: string) => Promise<void>;
+  duplicateBlock: (uuid: string) => Promise<Block | null>;
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -51,107 +78,157 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   activePageId: null,
   loading: true,
 
-  // ── Load all data directly from Supabase (primary DB) ─────────────────────
+  // ── Load all data from Supabase ────────────────────────────────────────────
   loadGraph: async () => {
     const user = useAuthStore.getState().user;
     if (!user) return;
+    set({ loading: true });
 
-    const [{ data: cloudPages, error: pagesErr }, { data: cloudBlocks, error: blocksErr }] = await Promise.all([
+    const [{ data: cloudPages, error: pErr }, { data: cloudBlocks, error: bErr }] = await Promise.all([
       supabase.from('pages').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
       supabase.from('blocks').select('*').eq('user_id', user.id),
     ]);
 
-    if (pagesErr) console.error('loadGraph pages error', pagesErr);
-    if (blocksErr) console.error('loadGraph blocks error', blocksErr);
+    if (pErr) console.error('loadGraph pages', pErr);
+    if (bErr) console.error('loadGraph blocks', bErr);
 
-    const pagesRecord = (cloudPages ?? []).reduce<Record<string, Page>>((acc, p) => ({ ...acc, [p.id]: p }), {});
-    const blocksRecord = (cloudBlocks ?? []).reduce<Record<string, Block>>((acc, b) => ({ ...acc, [b.uuid]: b }), {});
+    const pages = (cloudPages ?? []).reduce<Record<string, Page>>((acc, p) => ({
+      ...acc,
+      [p.id]: {
+        ...p,
+        root_blocks: p.root_blocks ?? [],
+        tags: p.tags ?? [],
+        is_favorite: p.is_favorite ?? false,
+        parent_page_id: p.parent_page_id ?? null,
+        icon: p.icon ?? null,
+      }
+    }), {});
 
-    set({ pages: pagesRecord, blocks: blocksRecord, loading: false });
-  },
+    const blocks = (cloudBlocks ?? []).reduce<Record<string, Block>>((acc, b) => ({
+      ...acc,
+      [b.uuid]: {
+        ...b,
+        children: b.children ?? [],
+        properties: b.properties ?? {},
+        block_type: b.block_type ?? 'text',
+        is_collapsed: b.is_collapsed ?? false,
+      }
+    }), {});
 
-  // ── Create a page ──────────────────────────────────────────────────────────
-  createPage: async (title, type = 'normal') => {
-    const user = useAuthStore.getState().user;
-    const newPage: Page = {
-      id: uuidv4(),
-      user_id: user!.id,
-      title,
-      type,
-      root_blocks: [],
-      created_at: Date.now(),
-      updated_at: Date.now(),
-    };
+    set({ pages, blocks, loading: false });
 
-    const { error } = await supabase.from('pages').insert(newPage);
-    if (error) throw new Error(`createPage: ${error.message}`);
-
-    set(state => ({ pages: { ...state.pages, [newPage.id]: newPage } }));
-    return newPage;
+    // Build link index
+    useLinkStore.getState().buildIndex(blocks, pages);
   },
 
   setActivePage: (id) => set({ activePageId: id }),
 
-  // ── Add a block ────────────────────────────────────────────────────────────
-  addBlock: async (pageId, parentId, index, content = '') => {
+  // ── Pages ──────────────────────────────────────────────────────────────────
+
+  createPage: async (title, type = 'normal', parentId = null) => {
+    const user = useAuthStore.getState().user;
+    const newPage: Page = {
+      id: uuidv4(), user_id: user!.id, title, type,
+      root_blocks: [], is_favorite: false,
+      parent_page_id: parentId, tags: [], icon: null,
+      created_at: Date.now(), updated_at: Date.now(),
+    };
+    const { error } = await supabase.from('pages').insert(newPage);
+    if (error) throw new Error(error.message);
+    set(s => ({ pages: { ...s.pages, [newPage.id]: newPage } }));
+    return newPage;
+  },
+
+  deletePage: async (id) => {
+    await supabase.from('pages').delete().eq('id', id);
+    set(s => {
+      const pages = { ...s.pages };
+      delete pages[id];
+      const blocks = { ...s.blocks };
+      Object.keys(blocks).forEach(k => { if (blocks[k].page_id === id) delete blocks[k]; });
+      return { pages, blocks, activePageId: s.activePageId === id ? null : s.activePageId };
+    });
+  },
+
+  renamePage: async (id, title) => {
+    await supabase.from('pages').update({ title, updated_at: Date.now() }).eq('id', id);
+    set(s => ({ pages: { ...s.pages, [id]: { ...s.pages[id], title } } }));
+  },
+
+  favoritePage: async (id, val) => {
+    await supabase.from('pages').update({ is_favorite: val }).eq('id', id);
+    set(s => ({ pages: { ...s.pages, [id]: { ...s.pages[id], is_favorite: val } } }));
+  },
+
+  updatePageIcon: async (id, icon) => {
+    await supabase.from('pages').update({ icon }).eq('id', id);
+    set(s => ({ pages: { ...s.pages, [id]: { ...s.pages[id], icon } } }));
+  },
+
+  createDailyPage: async () => {
+    const today = format(new Date(), 'MMMM d, yyyy');
+    const existing = Object.values(get().pages).find(p => p.title === today && p.type === 'journal');
+    if (existing) { get().setActivePage(existing.id); return existing; }
+    const page = await get().createPage(today, 'journal');
+    get().setActivePage(page.id);
+    return page;
+  },
+
+  // ── Blocks ─────────────────────────────────────────────────────────────────
+
+  addBlock: async (pageId, parentId, index, content = '', type = 'text') => {
     const user = useAuthStore.getState().user;
     const newBlock: Block = {
-      uuid: uuidv4(),
-      user_id: user!.id,
-      page_id: pageId,
-      parent_id: parentId,
-      content,
-      children: [],
-      properties: {},
-      created_at: Date.now(),
-      updated_at: Date.now(),
+      uuid: uuidv4(), user_id: user!.id, page_id: pageId,
+      parent_id: parentId, content, children: [],
+      properties: {}, block_type: type, is_collapsed: false,
+      created_at: Date.now(), updated_at: Date.now(),
     };
 
-    // 1. Insert new block
-    const { error: insertErr } = await supabase.from('blocks').insert(newBlock);
-    if (insertErr) throw new Error(`addBlock insert: ${insertErr.message}`);
+    const { error } = await supabase.from('blocks').insert(newBlock);
+    if (error) throw new Error(error.message);
 
-    // 2. Update parent or page root_blocks
     if (parentId) {
       const parent = get().blocks[parentId];
       if (parent) {
         const updatedChildren = [...parent.children.slice(0, index), newBlock.uuid, ...parent.children.slice(index)];
         await supabase.from('blocks').update({ children: updatedChildren, updated_at: Date.now() }).eq('uuid', parentId);
-        set(state => ({
-          blocks: { ...state.blocks, [parentId]: { ...parent, children: updatedChildren } }
-        }));
+        set(s => ({ blocks: { ...s.blocks, [parentId]: { ...parent, children: updatedChildren } } }));
       }
     } else {
       const page = get().pages[pageId];
       if (page) {
         const updatedRootBlocks = [...page.root_blocks.slice(0, index), newBlock.uuid, ...page.root_blocks.slice(index)];
         await supabase.from('pages').update({ root_blocks: updatedRootBlocks, updated_at: Date.now() }).eq('id', pageId);
-        set(state => ({
-          pages: { ...state.pages, [pageId]: { ...page, root_blocks: updatedRootBlocks } }
-        }));
+        set(s => ({ pages: { ...s.pages, [pageId]: { ...page, root_blocks: updatedRootBlocks } } }));
       }
     }
 
-    set(state => ({ blocks: { ...state.blocks, [newBlock.uuid]: newBlock } }));
+    set(s => ({ blocks: { ...s.blocks, [newBlock.uuid]: newBlock } }));
     return newBlock;
   },
 
-  // ── Update block content ───────────────────────────────────────────────────
   updateBlock: async (uuid, content) => {
     const block = get().blocks[uuid];
     if (!block) return;
     const updated_at = Date.now();
     await supabase.from('blocks').update({ content, updated_at }).eq('uuid', uuid);
-    set(state => ({ blocks: { ...state.blocks, [uuid]: { ...block, content, updated_at } } }));
+    set(s => ({ blocks: { ...s.blocks, [uuid]: { ...block, content, updated_at } } }));
+    // Rebuild link index
+    const { pages, blocks } = get();
+    useLinkStore.getState().buildIndex({ ...blocks, [uuid]: { ...block, content } }, pages);
   },
 
-  // ── Delete a block (recursive) ─────────────────────────────────────────────
+  updateBlockType: async (uuid, type) => {
+    await supabase.from('blocks').update({ block_type: type }).eq('uuid', uuid);
+    set(s => ({ blocks: { ...s.blocks, [uuid]: { ...s.blocks[uuid], block_type: type } } }));
+  },
+
   deleteBlock: async (uuid) => {
     const { blocks, activePageId } = get();
     const block = blocks[uuid];
     if (!block) return;
 
-    // Collect all descendant UUIDs
     const idsToDelete: string[] = [];
     const collect = (id: string) => {
       const b = blocks[id];
@@ -163,36 +240,95 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
     await supabase.from('blocks').delete().in('uuid', idsToDelete);
 
-    // Remove from parent children list or page root_blocks
     if (block.parent_id && blocks[block.parent_id]) {
       const parent = blocks[block.parent_id];
       const updatedChildren = parent.children.filter(c => c !== uuid);
       await supabase.from('blocks').update({ children: updatedChildren }).eq('uuid', block.parent_id);
-      set(state => ({
-        blocks: { ...state.blocks, [block.parent_id!]: { ...parent, children: updatedChildren } }
-      }));
+      set(s => ({ blocks: { ...s.blocks, [block.parent_id!]: { ...parent, children: updatedChildren } } }));
     } else if (activePageId) {
       const page = get().pages[activePageId];
       if (page) {
         const updatedRootBlocks = page.root_blocks.filter(c => c !== uuid);
         await supabase.from('pages').update({ root_blocks: updatedRootBlocks }).eq('id', activePageId);
-        set(state => ({
-          pages: { ...state.pages, [activePageId]: { ...page, root_blocks: updatedRootBlocks } }
-        }));
+        set(s => ({ pages: { ...s.pages, [activePageId]: { ...page, root_blocks: updatedRootBlocks } } }));
       }
     }
 
-    // Remove from local state
-    set(state => {
-      const nextBlocks = { ...state.blocks };
+    set(s => {
+      const nextBlocks = { ...s.blocks };
       idsToDelete.forEach(id => delete nextBlocks[id]);
       return { blocks: nextBlocks };
     });
   },
 
-  moveBlock: async (_uuid, _newParentId, _newIndex) => { /* stub */ },
+  toggleCollapse: async (uuid) => {
+    const block = get().blocks[uuid];
+    if (!block) return;
+    const is_collapsed = !block.is_collapsed;
+    await supabase.from('blocks').update({ is_collapsed }).eq('uuid', uuid);
+    set(s => ({ blocks: { ...s.blocks, [uuid]: { ...block, is_collapsed } } }));
+  },
 
-  // ── Indent block (Tab) ─────────────────────────────────────────────────────
+  duplicateBlock: async (uuid) => {
+    const block = get().blocks[uuid];
+    if (!block) return null;
+    const parentArray = block.parent_id
+      ? get().blocks[block.parent_id]?.children
+      : get().pages[block.page_id]?.root_blocks;
+    const index = (parentArray ?? []).indexOf(uuid);
+    return await get().addBlock(block.page_id, block.parent_id, index + 1, block.content, block.block_type);
+  },
+
+  moveBlock: async (uuid, newParentId, newIndex) => {
+    const { blocks, pages } = get();
+    const block = blocks[uuid];
+    if (!block) return;
+
+    const oldParentArray = block.parent_id ? blocks[block.parent_id]?.children : pages[block.page_id]?.root_blocks;
+    const oldIndex = (oldParentArray ?? []).indexOf(uuid);
+
+    // Remove from old location
+    const newOldParentArray = (oldParentArray ?? []).filter(id => id !== uuid);
+    if (block.parent_id) {
+      await supabase.from('blocks').update({ children: newOldParentArray }).eq('uuid', block.parent_id);
+      set(s => ({ blocks: { ...s.blocks, [block.parent_id!]: { ...blocks[block.parent_id!], children: newOldParentArray } } }));
+    } else {
+      const page = pages[block.page_id];
+      await supabase.from('pages').update({ root_blocks: newOldParentArray }).eq('id', block.page_id);
+      set(s => ({ pages: { ...s.pages, [block.page_id]: { ...page, root_blocks: newOldParentArray } } }));
+    }
+
+    // Adjust index if same parent and moving down
+    let adjustedIndex = newIndex;
+    if (block.parent_id === newParentId && oldIndex < newIndex) adjustedIndex--;
+
+    // Add to new location
+    const newParentArray = newParentId
+      ? [...(get().blocks[newParentId]?.children ?? [])]
+      : [...(get().pages[block.page_id]?.root_blocks ?? [])];
+    newParentArray.splice(adjustedIndex, 0, uuid);
+
+    if (newParentId) {
+      await supabase.from('blocks').update({ children: newParentArray, updated_at: Date.now() }).eq('uuid', newParentId);
+      await supabase.from('blocks').update({ parent_id: newParentId }).eq('uuid', uuid);
+      set(s => ({
+        blocks: {
+          ...s.blocks,
+          [newParentId]: { ...get().blocks[newParentId], children: newParentArray },
+          [uuid]: { ...block, parent_id: newParentId },
+        }
+      }));
+    } else {
+      const page = get().pages[block.page_id];
+      await supabase.from('pages').update({ root_blocks: newParentArray }).eq('id', block.page_id);
+      await supabase.from('blocks').update({ parent_id: null }).eq('uuid', uuid);
+      set(s => ({
+        pages: { ...s.pages, [block.page_id]: { ...page, root_blocks: newParentArray } },
+        blocks: { ...s.blocks, [uuid]: { ...block, parent_id: null } },
+      }));
+    }
+  },
+
   indentBlock: async (uuid) => {
     const { blocks, pages } = get();
     const block = blocks[uuid];
@@ -207,31 +343,28 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const prevSibling = blocks[prevSiblingId];
     if (!prevSibling) return;
 
-    // Remove from current parent
     const newParentArray = parentArray.filter(id => id !== uuid);
     if (block.parent_id) {
       await supabase.from('blocks').update({ children: newParentArray }).eq('uuid', block.parent_id);
-      set(state => ({ blocks: { ...state.blocks, [block.parent_id!]: { ...blocks[block.parent_id!], children: newParentArray } } }));
+      set(s => ({ blocks: { ...s.blocks, [block.parent_id!]: { ...blocks[block.parent_id!], children: newParentArray } } }));
     } else {
       await supabase.from('pages').update({ root_blocks: newParentArray }).eq('id', block.page_id);
-      set(state => ({ pages: { ...state.pages, [block.page_id]: { ...pages[block.page_id], root_blocks: newParentArray } } }));
+      set(s => ({ pages: { ...s.pages, [block.page_id]: { ...pages[block.page_id], root_blocks: newParentArray } } }));
     }
 
-    // Add as last child of previous sibling
     const updatedSiblingChildren = [...prevSibling.children, uuid];
     await supabase.from('blocks').update({ children: updatedSiblingChildren }).eq('uuid', prevSiblingId);
     await supabase.from('blocks').update({ parent_id: prevSiblingId }).eq('uuid', uuid);
 
-    set(state => ({
+    set(s => ({
       blocks: {
-        ...state.blocks,
+        ...s.blocks,
         [prevSiblingId]: { ...prevSibling, children: updatedSiblingChildren },
         [uuid]: { ...block, parent_id: prevSiblingId },
       }
     }));
   },
 
-  // ── Outdent block (Shift+Tab) ──────────────────────────────────────────────
   outdentBlock: async (uuid) => {
     const { blocks, pages } = get();
     const block = blocks[uuid];
@@ -242,20 +375,16 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const indexInParent = currentParent.children.indexOf(uuid);
     const followingSiblings = currentParent.children.slice(indexInParent + 1);
 
-    // 1. Remove block and following siblings from current parent
     const updatedParentChildren = currentParent.children.slice(0, indexInParent);
     await supabase.from('blocks').update({ children: updatedParentChildren }).eq('uuid', currentParent.uuid);
 
-    // 2. Following siblings become children of block
     const updatedBlockChildren = [...block.children, ...followingSiblings];
     await supabase.from('blocks').update({ children: updatedBlockChildren, parent_id: grandParentId }).eq('uuid', uuid);
 
-    // 3. Update parent_id of following siblings
     if (followingSiblings.length > 0) {
       await supabase.from('blocks').update({ parent_id: uuid }).in('uuid', followingSiblings);
     }
 
-    // 4. Add block after its current parent in the grandparent
     if (grandParentId) {
       const grandParent = blocks[grandParentId];
       const parentIndexInGP = grandParent.children.indexOf(currentParent.uuid);
@@ -265,9 +394,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         ...grandParent.children.slice(parentIndexInGP + 1),
       ];
       await supabase.from('blocks').update({ children: updatedGPChildren }).eq('uuid', grandParentId);
-      set(state => ({
-        blocks: { ...state.blocks, [grandParentId]: { ...grandParent, children: updatedGPChildren } }
-      }));
+      set(s => ({ blocks: { ...s.blocks, [grandParentId]: { ...grandParent, children: updatedGPChildren } } }));
     } else {
       const page = pages[block.page_id];
       const parentIndexInPage = page.root_blocks.indexOf(currentParent.uuid);
@@ -277,15 +404,12 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         ...page.root_blocks.slice(parentIndexInPage + 1),
       ];
       await supabase.from('pages').update({ root_blocks: updatedRootBlocks }).eq('id', block.page_id);
-      set(state => ({
-        pages: { ...state.pages, [block.page_id]: { ...page, root_blocks: updatedRootBlocks } }
-      }));
+      set(s => ({ pages: { ...s.pages, [block.page_id]: { ...page, root_blocks: updatedRootBlocks } } }));
     }
 
-    // 5. Local state update
-    set(state => ({
+    set(s => ({
       blocks: {
-        ...state.blocks,
+        ...s.blocks,
         [currentParent.uuid]: { ...currentParent, children: updatedParentChildren },
         [uuid]: { ...block, parent_id: grandParentId, children: updatedBlockChildren },
         ...Object.fromEntries(followingSiblings.map(id => [id, { ...blocks[id], parent_id: uuid }])),

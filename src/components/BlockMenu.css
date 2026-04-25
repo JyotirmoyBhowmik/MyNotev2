@@ -1,0 +1,59 @@
+/* ── Block Menu (Slash commands) ────────────────────────────────────────── */
+.block-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  min-width: 260px;
+  max-height: 340px;
+  overflow-y: auto;
+  animation: fadeIn 0.1s ease;
+  padding: 4px;
+}
+
+.block-menu-header {
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.block-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.block-menu-item:hover,
+.block-menu-item.selected { background: var(--active); }
+
+.block-menu-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--hover);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.block-menu-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-1);
+}
+
+.block-menu-desc {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  margin-left: auto;
+}

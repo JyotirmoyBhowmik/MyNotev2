@@ -90,49 +90,57 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       if (readOnly || isSaving.current) return;
       
       const html = editor.getHTML()
+      // Use a very strict check for empty/initial states
+      const isActuallyEmpty = html === '<p></p>' || html === ''
       if (html === lastSavedContent.current) return;
 
-      // Debounced auto-save — 800ms after last keystroke
+      // Debounced auto-save — 1000ms after last keystroke
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
         if (isSaving.current) return;
         
-        // Final check before save
         const currentHtml = editor.getHTML()
         if (currentHtml === lastSavedContent.current) return;
 
-        // Double check store cache for redundancy
+        // Skip saving if it's empty and we already have a nexus block (to avoid wiping content)
         const store = useGraphStore.getState();
         const cachedUuid = store.nexusBlockCache[pageId];
-        const cachedBlock = cachedUuid ? store.blocks[cachedUuid] : null;
-        if (cachedBlock && cachedBlock.content === currentHtml) {
-          lastSavedContent.current = currentHtml;
-          return;
+        if (isActuallyEmpty && cachedUuid) {
+           console.warn('NexusEditor: Blocked attempt to save empty content over existing block');
+           return;
         }
 
         isSaving.current = true;
         try {
           await store.savePageContent(pageId, currentHtml)
           lastSavedContent.current = currentHtml;
+          console.log('NexusEditor: Saved page content');
         } catch (err) {
           console.error('NexusEditor save error', err);
         } finally {
           isSaving.current = false;
         }
-      }, 800) as unknown as number;
+      }, 1000) as unknown as number;
     },
   }, [pageId])
 
   // When page changes, reload content
+  const lastPageId = useRef<string | null>(null)
+  
   useEffect(() => {
-    if (editor && !editor.isDestroyed) {
+    if (!editor || editor.isDestroyed) return
+    
+    // Only set content if the page actually changed or it's the first load
+    if (pageId !== lastPageId.current) {
       const initial = buildInitialContent()
+      console.log('NexusEditor: Initializing content for page', pageId);
       editor.commands.setContent(initial)
       lastSavedContent.current = initial
-      editor.setEditable(!readOnly)
+      lastPageId.current = pageId
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId, readOnly, editor])
+    
+    editor.setEditable(!readOnly)
+  }, [pageId, readOnly, editor, buildInitialContent])
 
   if (!page || !editor) return null
 

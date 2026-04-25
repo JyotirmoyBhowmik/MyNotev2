@@ -24,21 +24,26 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app-layout">
-        <ResizablePanelGroup orientation="horizontal" className="h-full items-stretch">
+        <ResizablePanelGroup orientation="horizontal" className="h-full" id="main-layout-group">
           {/* Left Sidebar: Navigation Tree */}
           <ResizablePanel 
             defaultSize={18} 
             minSize={12} 
-            maxSize={30}
-            className="flex flex-col min-w-[200px]"
+            maxSize={40}
+            id="sidebar-panel"
           >
-            <Sidebar onOpenAdmin={onOpenAdmin} isAdmin={isAdmin} />
+            <div className="h-full flex flex-col" style={{ minWidth: '200px' }}>
+              <Sidebar onOpenAdmin={onOpenAdmin} isAdmin={isAdmin} />
+            </div>
           </ResizablePanel>
-
-          <ResizableHandle withHandle />
+          
+          <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/30 transition-colors" />
 
           {/* Center: The Block Editor or Dashboard */}
-          <ResizablePanel defaultSize={(rightSidebarOpen && !strategyOpen) ? 64 : 82}>
+          <ResizablePanel 
+            defaultSize={rightSidebarOpen ? 64 : 82} 
+            id="content-panel"
+          >
             <main className="main-content h-full flex flex-col relative">
               {strategyOpen ? (
                 <OKRDashboard />
@@ -59,12 +64,12 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
             </main>
           </ResizablePanel>
 
-          {/* Right: Inspector (Properties, Backlinks, AI) */}
+          {/* Right Sidebar: Inspector / Links */}
           {rightSidebarOpen && !strategyOpen && (
             <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={18} minSize={15} maxSize={35}>
-                 <Inspector pageId={activePageId} />
+              <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/30 transition-colors" />
+              <ResizablePanel defaultSize={18} minSize={15} maxSize={25} id="inspector-panel">
+                <Inspector pageId={activePageId} />
               </ResizablePanel>
             </>
           )}

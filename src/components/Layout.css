@@ -1,8 +1,9 @@
 .app-layout {
   display: flex;
-  width: 100vw;
+  width: 500vw;
   height: 100vh;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   background: var(--bg);
 }
 

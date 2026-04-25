@@ -92,7 +92,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
 
   loadGraph: async () => {
-    console.log('[GraphStore] loadGraph v2.1 init');
+    if (get().loading && Object.keys(get().pages).length > 0) return; // Already loading
+    
+    console.log('[GraphStore] loadGraph v2.2 init');
     const user = useAuthStore.getState().user;
     if (!user) return;
     set({ loading: true });
@@ -140,7 +142,12 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     set({ pages, blocks, nexusBlockCache, loading: false });
     useLinkStore.getState().buildIndex(blocks, pages);
 
-    // Realtime
+    // Realtime: Clean up existing subscription first to avoid "already subscribed" errors
+    const oldChannel = supabase.getChannels().find(c => c.topic === 'realtime:graph-sync' || c.name === 'graph-sync');
+    if (oldChannel) {
+      await supabase.removeChannel(oldChannel);
+    }
+
     supabase
       .channel('graph-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks', filter: `user_id=eq.${user.id}` }, (payload) => {

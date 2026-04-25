@@ -86,44 +86,28 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       TaskList,
       TaskItem.configure({ nested: true }),
     ],
-    content: '', // Start empty, useEffect will fill it
+    content: buildInitialContent(), // Initialize directly from store/cache ONCE
     autofocus: !readOnly,
     editable: !readOnly,
     editorProps: {
       attributes: { class: 'tiptap nexus-editor-content' },
-      handleKeyDown: (_view, _event) => {
-        return false
-      },
     },
     onUpdate: ({ editor }) => {
       if (readOnly || isSaving.current) return;
       
       const html = editor.getHTML()
-      // Use a very strict check for empty/initial states
-      const isActuallyEmpty = html === '<p></p>' || html === ''
       if (html === lastSavedContent.current) return;
 
-      // Debounced auto-save — 1000ms after last keystroke
+      // Debounced auto-save
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(async () => {
-        if (isSaving.current) return;
-        
         const currentHtml = editor.getHTML()
         if (currentHtml === lastSavedContent.current) return;
 
-        // Skip saving if it's empty and we already have a nexus block (to avoid wiping content)
-        const store = useGraphStore.getState();
-        const cachedUuid = store.nexusBlockCache[pageId];
-        if (isActuallyEmpty && cachedUuid) {
-           console.warn('NexusEditor: Blocked attempt to save empty content over existing block');
-           return;
-        }
-
         isSaving.current = true;
         try {
-          await store.savePageContent(pageId, currentHtml)
+          await useGraphStore.getState().savePageContent(pageId, currentHtml)
           lastSavedContent.current = currentHtml;
-          console.log('NexusEditor: Saved page content');
         } catch (err) {
           console.error('NexusEditor save error', err);
         } finally {
@@ -131,25 +115,14 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
         }
       }, 1000) as unknown as number;
     },
-  }, [pageId])
+  }, [pageId]) // ONLY re-create when page changes
 
-  // When page changes, reload content
-  const lastPageId = useRef<string | null>(null)
-  
+  // Synchronize readOnly state without resetting content
   useEffect(() => {
-    if (!editor || editor.isDestroyed) return
-    
-    // Only set content if the page actually changed or it's the first load
-    if (pageId !== lastPageId.current) {
-      const initial = buildInitialContent()
-      console.log('NexusEditor: Setting content for page', pageId);
-      editor.commands.setContent(initial)
-      lastSavedContent.current = initial
-      lastPageId.current = pageId
+    if (editor && !editor.isDestroyed) {
+      editor.setEditable(!readOnly)
     }
-    
-    editor.setEditable(!readOnly)
-  }, [pageId, readOnly, editor])
+  }, [readOnly, editor])
 
   if (!page || !editor) return null
 

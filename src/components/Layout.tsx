@@ -26,22 +26,22 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
       <div className="app-layout">
         <ResizablePanelGroup orientation="horizontal" className="h-full" id="main-layout-group">
           {/* Left Sidebar: Navigation Tree */}
-          <ResizablePanel 
-            defaultSize={20} 
-            minSize={5} 
-            maxSize={95}
+          <ResizablePanel
+            defaultSize={20}
+            minSize={2}
+            maxSize={98}
             id="sidebar-panel"
           >
-            <div className="h-full flex flex-col" style={{ minWidth: '150px' }}>
+            <div className="h-full flex flex-col">
               <Sidebar onOpenAdmin={onOpenAdmin} isAdmin={isAdmin} />
             </div>
           </ResizablePanel>
-          
+
           <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/30 transition-colors" />
 
           {/* Center: The Block Editor or Dashboard */}
-          <ResizablePanel 
-            defaultSize={rightSidebarOpen ? 64 : 82} 
+          <ResizablePanel
+            defaultSize={rightSidebarOpen ? 64 : 82}
             id="content-panel"
           >
             <main className="main-content h-full flex flex-col relative">
@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
               ) : (
                 <PageEditor />
               )}
-              
+
               {/* Graph toggle button (Floating) */}
               <button
                 className="graph-toggle-btn"

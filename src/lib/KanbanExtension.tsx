@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { Node, mergeAttributes } from '@tiptap/core';
 import { 
@@ -7,9 +7,7 @@ import {
   KeyboardSensor, 
   PointerSensor, 
   useSensor, 
-  useSensors,
-  DragOverlay,
-  defaultDropAnimationSideEffects
+  useSensors
 } from '@dnd-kit/core';
 import { 
   arrayMove, 
@@ -20,7 +18,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, MoreVertical, Trash2, GripVertical, ChevronRight, Layout } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Layout } from 'lucide-react';
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 interface Card {
@@ -195,7 +193,6 @@ const KanbanBoardComponent = ({ node, updateAttributes }: any) => {
 
     // Handle Card Dragging
     if (active.data.current.type === 'card') {
-      const activeCard = active.data.current.card;
       const sourceCol = data.columns.find(c => c.cardIds.includes(activeId));
       
       // Target could be another card OR a column

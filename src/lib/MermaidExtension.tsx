@@ -52,8 +52,9 @@ const MermaidNodeView = ({ node, updateAttributes }: any) => {
       setLoading(true);
       try {
         const m = await getMermaid();
-        // Clean up previous mermaid artifacts
         const containerId = `d${node.attrs.uuid}`;
+        
+        // Clean up previous mermaid artifacts
         const container = document.getElementById(containerId);
         if (container) container.remove();
 
@@ -183,20 +184,35 @@ export const MermaidExtension = Node.create({
   name: 'mermaid',
   group: 'block',
   atom: true,
+  draggable: true,
+  selectable: true,
 
   addAttributes() {
     return {
-      code: { default: 'graph TD\n  A --> B' },
+      code: { 
+        default: 'graph TD\n  A --> B',
+        parseHTML: element => element.getAttribute('data-code') || element.getAttribute('code'),
+        renderHTML: attributes => ({ 
+          'data-code': attributes.code,
+          code: attributes.code // Keep legacy support
+        })
+      },
       uuid: { 
         default: null,
-        parseHTML: element => element.getAttribute('data-uuid'),
-        renderHTML: attributes => ({ 'data-uuid': attributes.uuid })
+        parseHTML: element => element.getAttribute('data-uuid') || element.getAttribute('uuid'),
+        renderHTML: attributes => ({ 
+          'data-uuid': attributes.uuid,
+          uuid: attributes.uuid // Keep legacy support
+        })
       },
     };
   },
 
   parseHTML() {
-    return [{ tag: 'div[data-type="mermaid"]' }];
+    return [{ 
+      tag: 'div[data-type="mermaid"]',
+      priority: 100 // Ensure it takes precedence
+    }];
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -209,11 +225,11 @@ export const MermaidExtension = Node.create({
 
   addCommands() {
     return {
-      insertMermaid: () => ({ commands }: any) => {
+      insertMermaid: (code = 'graph TD\n  A --> B') => ({ commands }: any) => {
         return commands.insertContent({
           type: this.name,
           attrs: { 
-            code: 'graph TD\n  A --> B',
+            code,
             uuid: `mermaid-${crypto.randomUUID()}`
           }
         });

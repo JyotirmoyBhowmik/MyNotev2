@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
 
   const allPages = Object.values(pages)
     .filter(p => !p.deleted_at)
-    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    .sort((a, b) => a.title.localeCompare(b.title));
   const favoritePages = allPages.filter(p => p.is_favorite);
   const journalPages = allPages.filter(p => p.type === 'journal').sort((a, b) => b.created_at - a.created_at);
   
@@ -137,16 +137,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
         if (page.type === 'folder') {
           movePage(dragId, hoverId);
         } else {
-          // Re-order: swap or move after
-          const dragPage = pages[dragId];
-          const hoverPage = pages[hoverId];
-          if (dragPage && hoverPage) {
-            // Move dragPage to hoverPage's parent and take its order
-            movePage(dragId, hoverPage.parent_page_id);
-            reorderPage(dragId, hoverPage.sort_order);
-            // We'd ideally shift all others, but for now, simple swap is a start
-            reorderPage(hoverId, dragPage.sort_order);
-          }
+          // If not a folder, move to the same parent level
+          movePage(dragId, page.parent_page_id);
         }
       },
       collect: (monitor) => ({
@@ -206,12 +198,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               </button>
               <button onClick={() => { setRenaming(page.id); setRenameDraft(page.title); setContextPage(null); }}>
                 <Edit3 size={12} /> Rename
-              </button>
-              <button onClick={() => { reorderPage(page.id, page.sort_order - 1.5); setContextPage(null); }}>
-                <ChevronRight size={12} className="-rotate-90" /> Move Up
-              </button>
-              <button onClick={() => { reorderPage(page.id, page.sort_order + 1.5); setContextPage(null); }}>
-                <ChevronRight size={12} className="rotate-90" /> Move Down
               </button>
               <button onClick={() => handleDelete(page.id)} className="danger">
                 <Trash2 size={12} /> Delete

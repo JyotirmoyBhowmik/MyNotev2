@@ -240,13 +240,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   // Pages
   createPage: async (title, type = 'normal', parentId = null) => {
     const user = useAuthStore.getState().user;
-    const sort_order = Object.values(get().pages).length;
     const newPage: Page = {
       id: uuidv4(), user_id: user!.id, title, type,
       root_blocks: [], is_favorite: false,
       parent_page_id: parentId, tags: [], icon: type === 'folder' ? '📁' : null,
       created_at: Date.now(), updated_at: Date.now(), deleted_at: null,
-      sort_order
     };
     const { error } = await supabase.from('pages').insert(newPage);
     if (error) throw new Error(error.message);
@@ -258,9 +256,9 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     return get().createPage(title, 'folder', parentId);
   },
 
-  reorderPage: async (id, newOrder) => {
-    await supabase.from('pages').update({ sort_order: newOrder, updated_at: Date.now() }).eq('id', id);
-    set(s => ({ pages: { ...s.pages, [id]: { ...s.pages[id], sort_order: newOrder } } }));
+  reorderPage: async (id, _newOrder) => {
+    // Column missing in DB, skipping
+    console.warn('[GraphStore] reorderPage skipped: sort_order column missing in DB');
   },
 
   deletePage: async (id) => {

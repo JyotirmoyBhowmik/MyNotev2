@@ -256,7 +256,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     return get().createPage(title, 'folder', parentId);
   },
 
-  reorderPage: async (id, _newOrder) => {
+  reorderPage: async (_id, _newOrder) => {
     // Column missing in DB, skipping
     console.warn('[GraphStore] reorderPage skipped: sort_order column missing in DB');
   },

@@ -100,6 +100,19 @@ export const PageEditor: React.FC = () => {
 
   const pageBacklinks = backlinks[activePageId] || [];
 
+  const getBreadcrumbs = () => {
+    const crumbs: any[] = [];
+    let currentId = page.parent_page_id;
+    while (currentId) {
+      const parent = pages[currentId];
+      if (parent) {
+        crumbs.unshift(parent);
+        currentId = parent.parent_page_id;
+      } else break;
+    }
+    return crumbs;
+  };
+
   const handleTitleSave = async () => {
     if (titleDraft.trim() && titleDraft !== page.title) {
       await renamePage(activePageId, titleDraft.trim());
@@ -122,6 +135,22 @@ export const PageEditor: React.FC = () => {
         <div className={`page-editor-body ${splitView ? 'split' : ''}`}>
           <div className="page-editor">
             <div className="page-header">
+              {/* Breadcrumbs */}
+              <div className="page-breadcrumbs">
+                {getBreadcrumbs().map((crumb) => (
+                  <React.Fragment key={crumb.id}>
+                    <span 
+                      className="breadcrumb-item" 
+                      onClick={() => useGraphStore.getState().setActivePage(crumb.id)}
+                    >
+                      {crumb.title}
+                    </span>
+                    <span className="breadcrumb-separator">/</span>
+                  </React.Fragment>
+                ))}
+                <span className="breadcrumb-current">{page.title}</span>
+              </div>
+
               <div className="page-icon" onClick={() => {
                 const icon = prompt('Enter an emoji for this page:', page.icon || '📄');
                 if (icon !== null) updatePageIcon(page.id, icon);

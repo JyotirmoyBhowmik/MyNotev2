@@ -87,6 +87,40 @@
 }
 .page-empty-icon { font-size: 2.5rem; }
 
+/* Breadcrumbs */
+.page-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+.breadcrumb-item:hover {
+  color: var(--text-2);
+}
+
+.breadcrumb-separator {
+  color: var(--text-4);
+  opacity: 0.5;
+}
+
+.breadcrumb-current {
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
 /* Page Header */
 .page-header {
   max-width: 720px;

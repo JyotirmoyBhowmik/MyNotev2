@@ -6,7 +6,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { 
   LogOut, FileText, Plus, Star, Calendar, Search, 
   ChevronRight, ChevronDown, Settings, Trash2, 
-  Edit3, Target, HelpCircle, FolderPlus 
+  Edit3, HelpCircle, FolderPlus 
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import './Sidebar.css';
@@ -22,10 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     deletePage, renamePage, createDailyPage, movePage
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
-  const { 
-    setCommandPaletteOpen, setJournalOpen, setStrategyOpen, 
-    strategyOpen, journalOpen 
-  } = useUIStore();
+  const { setCommandPaletteOpen } = useUIStore();
 
   const [expandedSections, setExpandedSections] = useState({ 
     favorites: true, pages: true, journal: true 
@@ -122,7 +119,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     }));
 
     return (
-      <div className={cn("page-tree-node", isDragging && "opacity-50")} ref={(node) => drag(drop(node))}>
+      <div 
+        className={cn("page-tree-node", isDragging && "opacity-50")} 
+        ref={(node) => { drag(node); drop(node); }}
+      >
         <div
           className={cn(
             "sidebar-item", 
@@ -210,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
         </button>
       </div>
 
-      <div className="sidebar-scroll" ref={dropRoot}>
+      <div className="sidebar-scroll" ref={(node) => { dropRoot(node); }}>
         {/* Favorites */}
         {favoritePages.length > 0 && (
           <div className="sidebar-section">

@@ -63,6 +63,7 @@ interface GraphState {
   favoritePage: (id: string, val: boolean) => Promise<void>;
   updatePageIcon: (id: string, icon: string) => Promise<void>;
   createDailyPage: () => Promise<Page>;
+  movePage: (id: string, newParentId: string | null) => Promise<void>;
 
   // Blocks
   addBlock: (pageId: string, parentId: string | null, index: number, content?: string, type?: BlockType) => Promise<Block>;
@@ -264,6 +265,21 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const page = await get().createPage(today, 'journal');
     get().setActivePage(page.id);
     return page;
+  },
+
+  movePage: async (id, newParentId) => {
+    if (id === newParentId) return;
+    // Basic check to prevent infinite loops (could be deeper but this is a start)
+    const page = get().pages[id];
+    if (!page) return;
+
+    await supabase.from('pages').update({ parent_page_id: newParentId, updated_at: Date.now() }).eq('id', id);
+    set(s => ({ 
+      pages: { 
+        ...s.pages, 
+        [id]: { ...s.pages[id], parent_page_id: newParentId } 
+      } 
+    }));
   },
 
   // Blocks

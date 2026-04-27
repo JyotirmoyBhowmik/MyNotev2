@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useGraphStore, type Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
+import { useDrag, useDrop } from 'react-dnd';
 import { 
   LogOut, FileText, Plus, Star, Calendar, Search, 
   ChevronRight, ChevronDown, Settings, Trash2, 
@@ -18,7 +19,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const { 
     pages, activePageId, setActivePage, createPage, createFolder,
-    deletePage, renamePage, createDailyPage 
+    deletePage, renamePage, createDailyPage, movePage
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
   const { 
@@ -91,14 +92,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     setRenaming(null);
   };
 
+  // Drop target for moving to root
+  const [, dropRoot] = useDrop(() => ({
+    accept: 'PAGE',
+    drop: (item: { id: string }) => movePage(item.id, null),
+  }));
+
   const PageItem = ({ page, depth = 0 }: { page: Page; depth?: number }) => {
     const hasChildren = pageTree[page.id] && pageTree[page.id].length > 0;
     const isExpanded = expandedPages[page.id];
 
+    const [{ isDragging }, drag] = useDrag(() => ({
+      type: 'PAGE',
+      item: { id: page.id },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }));
+
+    const [{ isOver }, drop] = useDrop(() => ({
+      accept: 'PAGE',
+      drop: (item: { id: string }, monitor) => {
+        if (monitor.didDrop()) return;
+        movePage(item.id, page.id);
+      },
+      collect: (monitor) => ({
+        isOver: monitor.isOver({ shallow: true }),
+      }),
+    }));
+
     return (
-      <div className="page-tree-node">
+      <div className={cn("page-tree-node", isDragging && "opacity-50")} ref={(node) => drag(drop(node))}>
         <div
-          className={`sidebar-item ${activePageId === page.id ? 'active' : ''}`}
+          className={cn(
+            "sidebar-item", 
+            activePageId === page.id && "active",
+            isOver && "bg-accent/20"
+          )}
           style={{ paddingLeft: `${depth * 12 + 12}px` }}
           onClick={() => setActivePage(page.id)}
           onContextMenu={(e) => { e.preventDefault(); setContextPage(page.id); }}
@@ -178,15 +208,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
         <button className="sidebar-quick-btn" onClick={async () => await createDailyPage()}>
           <Calendar size={14} /> Today
         </button>
-        <button className={cn("sidebar-quick-btn", journalOpen && "active")} onClick={() => { setJournalOpen(!journalOpen); setStrategyOpen(false); }}>
-          <Calendar size={14} /> Journal
-        </button>
-        <button className={cn("sidebar-quick-btn", strategyOpen && "active")} onClick={() => { setStrategyOpen(!strategyOpen); setJournalOpen(false); }}>
-          <Target size={14} /> Strategy
-        </button>
       </div>
 
-      <div className="sidebar-scroll">
+      <div className="sidebar-scroll" ref={dropRoot}>
         {/* Favorites */}
         {favoritePages.length > 0 && (
           <div className="sidebar-section">
@@ -203,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
           </div>
         )}
 
-        {/* Pages (Multi-level Tree) */}
+        {/* Pages (Multi-level Tree with Drag & Drop) */}
         <div className="sidebar-section">
           <div className="sidebar-section-title" onClick={() => toggleSection('pages')}>
             {expandedSections.pages ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -236,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
           <div className="sidebar-section-title text-[10px] uppercase tracking-widest opacity-50 mt-4">
             Help & Info
           </div>
-          <button className="sidebar-item text-accent" onClick={() => alert('Features:\n1. Multi-level Folders: Right-click pages to create sub-pages.\n2. Journal: Click "Today" or "Journal" for daily notes.\n3. Strategy: Click "Strategy" for OKR dashboard.\n4. Search: Press Ctrl+K or click the search icon.\n5. Editor Commands: Type "/" in any page for blocks.')}>
+          <button className="sidebar-item text-accent" onClick={() => alert('Features:\n1. Multi-level Folders: Right-click pages to create sub-pages.\n2. Drag & Drop: Drag pages into folders to organize.\n3. Journal: Click "Today" or "Journal" for daily notes.\n4. Strategy: Click "Strategy" for OKR dashboard.\n5. Search: Press Ctrl+K or click the search icon.\n6. Editor Commands: Type "/" in any page for blocks.')}>
             <HelpCircle size={12} /> Features Guide
           </button>
         </div>

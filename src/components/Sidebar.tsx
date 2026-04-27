@@ -18,6 +18,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
+  const { 
     pages, trash, activePageId, setActivePage, createPage, createFolder,
     deletePage, renamePage, createDailyPage, movePage,
     restorePage, permanentlyDeletePage, emptyTrash

@@ -50,6 +50,7 @@ interface GraphState {
   loading: boolean;
   nexusBlockCache: Record<string, string>; 
   saveLocks: Record<string, boolean>; 
+  pendingSaves: Record<string, string | null>; 
   trash: { pages: Record<string, Page>; blocks: Record<string, Block> };
   setLoading: (loading: boolean) => void;
 
@@ -331,7 +332,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       await supabase.from('blocks').delete().in('uuid', blockIds);
     }
     
-    set(s => ({ trash: { pages: {}, blocks: {} } }));
+    set({ trash: { pages: {}, blocks: {} } });
   },
 
   renamePage: async (id, title) => {

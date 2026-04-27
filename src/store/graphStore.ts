@@ -4,6 +4,8 @@ import { useAuthStore } from './authStore';
 import { useLinkStore } from './linkStore';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
+import { transactionMiddleware } from './middleware';
+import { BlockSchema, PageSchema } from '../lib/schemas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,6 +86,13 @@ interface GraphState {
   outdentBlock: (uuid: string) => Promise<void>;
   toggleCollapse: (uuid: string) => Promise<void>;
   duplicateBlock: (uuid: string) => Promise<Block | null>;
+  undoStack: any[];
+  redoStack: any[];
+  isSyncing: boolean;
+  syncError: string | null;
+  undo: () => void;
+  redo: () => void;
+  setSyncing: (status: boolean) => void;
   // Nexus Editor
   savePageContent: (pageId: string, html: string) => Promise<void>;
   updatePageContent: (pageId: string, content: string) => void;
@@ -91,16 +100,36 @@ interface GraphState {
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
-export const useGraphStore = create<GraphState>((set, get) => ({
-  pages: {},
-  blocks: {},
-  activePageId: null,
-  loading: true,
-  nexusBlockCache: {},
-  saveLocks: {},
-  pendingSaves: {},
-  trash: { pages: {}, blocks: {} },
-  setLoading: (loading) => set({ loading }),
+export const useGraphStore = create<GraphState>()(
+  transactionMiddleware((set, get) => ({
+    pages: {},
+    blocks: {},
+    activePageId: null,
+    loading: true,
+    nexusBlockCache: {},
+    saveLocks: {},
+    pendingSaves: {},
+    trash: { pages: {}, blocks: {} },
+    
+    // Core actions
+    setLoading: (loading) => set({ loading }),
+    setSyncing: (isSyncing) => set({ isSyncing }),
+
+    undo: () => {
+      const { undoStack, redoStack, ...currentState } = get();
+      if (undoStack.length === 0) return;
+      const prevState = undoStack[undoStack.length - 1];
+      const nextUndo = undoStack.slice(0, -1);
+      set({ ...prevState, undoStack: nextUndo, redoStack: [currentState, ...redoStack] });
+    },
+
+    redo: () => {
+      const { undoStack, redoStack, ...currentState } = get();
+      if (redoStack.length === 0) return;
+      const nextState = redoStack[0];
+      const nextRedo = redoStack.slice(1);
+      set({ ...nextState, undoStack: [...undoStack, currentState], redoStack: nextRedo });
+    },
 
   loadGraph: async () => {
     if (get().loading && Object.keys(get().pages).length > 0) return; // Already loading
@@ -392,7 +421,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       created_at: Date.now(), updated_at: Date.now(), deleted_at: null,
     };
 
-    const { error } = await supabase.from('blocks').insert(newBlock);
+    const validated = BlockSchema.parse(newBlock);
+    const { error } = await supabase.from('blocks').insert(validated);
     if (error) throw new Error(error.message);
 
     if (parentId) {
@@ -650,10 +680,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const userId = useAuthStore.getState().user?.id;
     if (!userId) return;
 
-    set(s => ({ 
-      saveLocks: { ...s.saveLocks, [pageId]: true },
-      pendingSaves: { ...s.pendingSaves, [pageId]: null }
-    }));
+    get().setSyncing(true);
 
     try {
       let blockUuid = nexusBlockCache[pageId];
@@ -670,15 +697,20 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       if (blockUuid) {
         const block = get().blocks[blockUuid];
         if (block && block.content === html) {
-          console.log('[NexusSave] Content unchanged (v2.1)');
+          console.log('[NexusSave] Content unchanged (v3.20)');
         } else {
           console.log('[NexusSave] Updating block', blockUuid);
           const updated_at = Date.now();
+          const blockData = { ...(get().blocks[blockUuid] || block), content: html, updated_at };
+          
+          // Zod Validation
+          const validated = BlockSchema.parse(blockData);
+          
           set(s => ({
-            blocks: { ...s.blocks, [blockUuid]: { ...(s.blocks[blockUuid] || block), content: html, updated_at, _local_ts: updated_at } },
+            blocks: { ...s.blocks, [blockUuid]: { ...validated, _local_ts: updated_at } },
             nexusBlockCache: { ...s.nexusBlockCache, [pageId]: blockUuid }
           }));
-          await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', blockUuid);
+          await supabase.from('blocks').update(validated).eq('uuid', blockUuid);
         }
       } else {
         console.log('[NexusSave] Creating new block');
@@ -686,32 +718,33 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         const now = Date.now();
         const newBlock: Block = {
           uuid, page_id: pageId, user_id: userId, parent_id: null,
-          content: html, block_type: 'nexus_html', is_collapsed: false,
+          content: html, block_type: 'nexus_html' as any, is_collapsed: false,
           children: [], properties: {}, created_at: now, updated_at: now,
-          deleted_at: null, _local_ts: now,
+          deleted_at: null,
         };
         
-        // Strip _local_ts before sending to Supabase
-        const { _local_ts, ...dbBlock } = newBlock;
+        // Zod Validation
+        const validated = BlockSchema.parse(newBlock);
         
         set(s => ({
-          blocks: { ...s.blocks, [uuid]: newBlock },
+          blocks: { ...s.blocks, [uuid]: { ...validated, _local_ts: now } },
           nexusBlockCache: { ...s.nexusBlockCache, [pageId]: uuid },
           pages: {
             ...s.pages,
             [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
           }
         }));
-        await supabase.from('blocks').insert(dbBlock);
+        await supabase.from('blocks').insert(validated);
       }
     } catch (err) {
       console.error('[NexusSave] Failed:', err);
     } finally {
       set(s => ({ saveLocks: { ...s.saveLocks, [pageId]: false } }));
+      get().setSyncing(false);
       
       const latestPending = get().pendingSaves[pageId];
       if (latestPending !== null && latestPending !== undefined) {
-        console.log('[NexusSave] Running queued save (v2.1)');
+        console.log('[NexusSave] Running queued save (v3.20)');
         get().savePageContent(pageId, latestPending);
       }
     }

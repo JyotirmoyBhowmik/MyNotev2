@@ -16,9 +16,12 @@ import {
   Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo,
   Grid, Activity, Layout
 } from 'lucide-react'
+import { Collaboration } from '@tiptap/extension-collaboration'
+import { CollaborationCursor } from '@tiptap/extension-collaboration-cursor'
+import * as Y from 'yjs'
+import { HocuspocusProvider } from '@hocuspocus/provider'
 import { BlockReference } from '../extensions/BlockReference'
-import { MermaidExtension } from '../lib/MermaidExtension'
-import { KanbanExtension } from '../lib/KanbanExtension'
+import { getRegisteredExtensions } from '../lib/pluginRegistry'
 import './NexusEditor.css'
 
 interface NexusEditorProps {
@@ -80,10 +83,13 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       .join('') || '<p></p>'
   }, [pageId])
 
-  // v2.6 Fix: Create FRESH extension instances for this editor instance
+  // v3.20 Plugin & Collab System
+  const ydoc = useMemo(() => new Y.Doc(), [pageId]);
+  
   const extensions = useMemo(() => [
     StarterKit.configure({
       codeBlock: false,
+      history: false, // Collaboration handles history
       heading: { levels: [1, 2, 3] },
     }),
     Placeholder.configure({
@@ -92,20 +98,30 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     Typography,
     BlockReference,
     Image.configure({ inline: false, allowBase64: false }),
-    // Link.configure({ 
-    //   openOnClick: true, 
-    //   HTMLAttributes: { class: 'tiptap-link' },
-    //   validate: href => /^https?:\/\//.test(href),
-    // }),
     TaskList,
     TaskItem.configure({ nested: true }),
     Table.configure({ resizable: true }),
     TableRow,
     TableHeader,
     TableCell,
-    MermaidExtension,
-    KanbanExtension,
-  ], []);
+    ...getRegisteredExtensions(),
+    Collaboration.configure({
+      document: ydoc,
+    }),
+    CollaborationCursor.configure({
+      render: (user: any) => {
+        const cursor = document.createElement('span')
+        cursor.classList.add('collaboration-cursor')
+        cursor.setAttribute('style', `border-color: ${user.color}`)
+        const label = document.createElement('div')
+        label.classList.add('collaboration-cursor-label')
+        label.setAttribute('style', `background-color: ${user.color}`)
+        label.innerText = user.name
+        cursor.appendChild(label)
+        return cursor
+      },
+    }),
+  ], [ydoc]);
 
   const editorOptions = useMemo(() => ({
     extensions,
@@ -232,9 +248,9 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
           </div>
           <div className="flex-1" />
           {isLocalSaving && (
-            <div className="flex items-center gap-2 px-3 animate-pulse">
-              <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
-              <span className="text-[10px] font-bold text-accent uppercase tracking-tighter">Saving</span>
+            <div className="flex items-center gap-2 px-3">
+              <Activity size={12} className="animate-spin text-accent" />
+              <span className="text-[10px] font-bold text-accent uppercase tracking-tighter">Syncing Block Transactions</span>
             </div>
           )}
         </div>

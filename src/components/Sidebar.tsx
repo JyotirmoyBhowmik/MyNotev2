@@ -174,7 +174,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               <span className="w-3" />
             )}
           </span>
-          <span className="sidebar-item-icon">{page.icon || (page.type === 'folder' ? '📁' : '📄')}</span>
+          <span className="sidebar-item-icon">
+            {page.icon || (page.type === 'folder' ? '📁' : (page.type === 'kanban' ? <Layout size={12} className="text-accent" /> : '📄'))}
+          </span>
           {renaming === page.id ? (
             <input
               className="sidebar-rename-input"

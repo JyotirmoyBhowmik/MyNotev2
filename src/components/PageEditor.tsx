@@ -230,15 +230,29 @@ export const PageEditor: React.FC = () => {
                   )}
 
                   <div className="page-meta">
-                    <span className="page-meta-type">
-                      {page.type === 'journal' ? '📅 Journal' : ((page.type as string) === 'kanban' ? '📋 Kanban' : '📄 Page')}
-                    </span>
-                    {pageBacklinks.length > 0 && (
-                      <span className="page-meta-links" onClick={toggleRightSidebar}>
-                        🔗 {pageBacklinks.length} backlink{pageBacklinks.length > 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
+                <select 
+                  className="page-type-select"
+                  value={page.type}
+                  onChange={async (e) => {
+                    const newType = e.target.value as any;
+                    await supabase.from('pages').update({ type: newType, updated_at: Date.now() }).eq('id', page.id);
+                    useGraphStore.setState(s => ({ 
+                      pages: { ...s.pages, [page.id]: { ...s.pages[page.id], type: newType } } 
+                    }));
+                  }}
+                >
+                  <option value="normal">📄 Page</option>
+                  <option value="journal">📅 Journal</option>
+                  <option value="kanban">📋 Kanban Board</option>
+                  <option value="folder">📁 Folder</option>
+                </select>
+                
+                {pageBacklinks.length > 0 && (
+                  <span className="page-meta-links" onClick={toggleRightSidebar}>
+                    🔗 {pageBacklinks.length} backlink{pageBacklinks.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
                 </div>
 
                 <div className="page-editor-content-area">

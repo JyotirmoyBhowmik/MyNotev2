@@ -103,7 +103,7 @@ export const Layout: React.FC<LayoutProps> = ({ onOpenAdmin, isAdmin }) => {
             {rightSidebarOpen && !strategyOpen && (
               <>
                 <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/30 transition-colors" />
-                <ResizablePanel defaultSize={25} minSize={15} maxSize={40} id="inspector-panel">
+                <ResizablePanel defaultSize={25} minSize={20} maxSize={50} id="inspector-panel">
                   <Inspector pageId={activePageId} />
                 </ResizablePanel>
               </>

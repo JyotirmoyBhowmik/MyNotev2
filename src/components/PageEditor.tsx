@@ -18,7 +18,7 @@ import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {
   const { activePageId, pages, trash, blocks, loadGraph, loading, renamePage, favoritePage, updatePageIcon, restorePage, permanentlyDeletePage } = useGraphStore();
-  const { setCommandPaletteOpen, rightSidebarOpen, toggleRightSidebar, viewMode, toggleViewMode, journalOpen, setJournalOpen } = useUIStore();
+  const { setCommandPaletteOpen, isInspectorOpen, toggleInspector, viewMode, toggleViewMode, journalOpen, setJournalOpen } = useUIStore();
   const { backlinks } = useLinkStore();
 
   const [init, setInit] = useState(false);
@@ -56,7 +56,7 @@ export const PageEditor: React.FC = () => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setCommandPaletteOpen(true); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); setCommandPaletteOpen(true); }
-      if ((e.ctrlKey || e.metaKey) && e.key === '\\') { e.preventDefault(); toggleRightSidebar(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === '\\') { e.preventDefault(); toggleInspector(); }
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') { e.preventDefault(); toggleViewMode(); }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') { e.preventDefault(); setShowTemplates(true); }
     };
@@ -208,13 +208,13 @@ export const PageEditor: React.FC = () => {
                   <button className="page-action-btn" onClick={() => setShowTemplates(true)} title="Insert template (Ctrl+Shift+T)">
                     <BookMarked size={14} />
                   </button>
-                  <button className={`page-action-btn ${viewMode === 'preview' ? 'active' : ''}`} onClick={toggleViewMode} title="Preview (Ctrl+E)">
+                  <button className={`page-action-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={toggleViewMode} title="Preview (Ctrl+E)">
                     <Eye size={14} />
                   </button>
                   <button className="page-action-btn" onClick={() => setShareOpen(true)} title="Share Page">
                     <Share2 size={14} />
                   </button>
-                  <button className={`page-action-btn ${rightSidebarOpen ? 'active' : ''}`} onClick={toggleRightSidebar} title="Right panel (Ctrl+\)">
+                  <button className={`page-action-btn ${isInspectorOpen ? 'active' : ''}`} onClick={toggleInspector} title="Right panel (Ctrl+\)">
                     <PanelRight size={14} />
                   </button>
                 </div>
@@ -245,7 +245,7 @@ export const PageEditor: React.FC = () => {
                 </select>
                 
                 {pageBacklinks.length > 0 && (
-                  <span className="page-meta-links" onClick={toggleRightSidebar}>
+                  <span className="page-meta-links" onClick={toggleInspector}>
                     🔗 {pageBacklinks.length} backlink{pageBacklinks.length > 1 ? 's' : ''}
                   </span>
                 )}

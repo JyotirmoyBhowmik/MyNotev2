@@ -56,7 +56,7 @@ export const BlockNode: React.FC<BlockNodeProps> = ({ uuid, onNavigateToPage }) 
 
   if (!block) return null;
 
-  const isCollapsed = collapsedBlocks.has(uuid) || block.is_collapsed;
+  const isCollapsed = !!collapsedBlocks[uuid] || block.is_collapsed;
   const hasChildren = block.children.length > 0;
 
   // ── Keyboard handler ───────────────────────────────────────────────────────

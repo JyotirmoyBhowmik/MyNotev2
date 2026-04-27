@@ -22,6 +22,7 @@ function clearAuthErrorFromUrl() {
 
 function App() {
   const { user, profile, loading, initAuth, isRecovering } = useAuthStore();
+  const activePageId = useGraphStore(s => s.activePageId);
   const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
@@ -75,7 +76,7 @@ function App() {
     return <AdminPanel onClose={() => setShowAdmin(false)} />;
   }
 
-  const activePageId = useGraphStore(s => s.activePageId);
+
 
   return (
     <Layout>

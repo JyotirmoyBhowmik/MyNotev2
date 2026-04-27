@@ -25,7 +25,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
   return (
     <div className="kanban-container">
       <div className="kanban-board">
-        {columns.map((col, index) => (
+        {columns.map((col) => (
           <KanbanColumn 
             key={col.uuid} 
             column={col} 
@@ -75,7 +75,7 @@ const KanbanColumn: React.FC<{ column: any; pageId: string }> = ({ column, pageI
       </div>
       
       <div className="kanban-items">
-        {column.children.map((itemUuid: string, idx: number) => (
+        {column.children.map((itemUuid: string) => (
           <KanbanItem 
             key={itemUuid} 
             itemId={itemUuid} 

@@ -16,6 +16,7 @@ interface AuthState {
   profile: Profile | null;
   loading: boolean;
   authError: string | null;
+  isRecovering: boolean;
   initAuth: () => void;
   checkApproval: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   loading: true,
   authError: null,
+  isRecovering: false,
 
   initAuth: () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -38,12 +40,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        set({ isRecovering: true });
+      }
+      
       if (session?.user) {
         set({ user: session.user, loading: true });
         fetchProfile(session.user.id, session.user.email ?? '', set);
       } else {
-        set({ user: null, profile: null, loading: false });
+        set({ user: null, profile: null, loading: false, isRecovering: false });
       }
     });
   },

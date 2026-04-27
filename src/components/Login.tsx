@@ -31,6 +31,25 @@ export const Login: React.FC = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email first.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/notes`,
+      });
+      if (error) throw error;
+      setSuccess('Password reset link sent to your email.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset link.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -79,6 +98,13 @@ export const Login: React.FC = () => {
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
               minLength={6}
             />
+            {!isSignUp && (
+              <div className="login-forgot-wrap">
+                <button type="button" className="forgot-btn" onClick={handleForgotPassword}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
           </div>
           <button id="login-submit" type="submit" className="login-submit" disabled={loading}>
             {loading ? (

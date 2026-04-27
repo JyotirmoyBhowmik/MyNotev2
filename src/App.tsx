@@ -4,6 +4,7 @@ import { Login } from './components/Login';
 import { Layout } from './components/Layout';
 import { PendingApproval } from './components/PendingApproval';
 import { AdminPanel } from './components/AdminPanel';
+import { PasswordReset } from './components/PasswordReset';
 import { NexusEditor } from './components/NexusEditor';
 import { useGraphStore } from './store/graphStore';
 
@@ -20,7 +21,7 @@ function clearAuthErrorFromUrl() {
 }
 
 function App() {
-  const { user, profile, loading, initAuth } = useAuthStore();
+  const { user, profile, loading, initAuth, isRecovering } = useAuthStore();
   const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ function App() {
     );
   }
 
+  if (isRecovering) return <PasswordReset />;
   if (!user) return <Login />;
 
   // Still loading profile (2nd stage)

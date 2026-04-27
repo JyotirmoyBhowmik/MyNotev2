@@ -209,6 +209,28 @@
   color: var(--text-3);
   text-align: center;
 }
+.login-forgot-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.forgot-btn {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.forgot-btn:hover {
+  color: var(--accent);
+  background: var(--hover);
+}
+
 .toggle-btn {
   color: var(--accent);
   font-size: 0.82rem;

@@ -1,5 +1,5 @@
 import { useGraphStore } from '../store/graphStore';
-import { Plus, MoreVertical, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import './KanbanView.css';
 
 interface KanbanViewProps {

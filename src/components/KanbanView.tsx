@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGraphStore } from '../store/graphStore';
-import { Plus, Trash2, Edit2, GripVertical } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useDrag, useDrop } from 'react-dnd';
 import './KanbanView.css';
 
@@ -9,7 +9,7 @@ interface KanbanViewProps {
 }
 
 export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
-  const { pages, blocks, addBlock, updateBlock, deleteBlock, moveBlock } = useGraphStore();
+  const { pages, blocks, addBlock } = useGraphStore();
   const page = pages[pageId];
   if (!page) return null;
 

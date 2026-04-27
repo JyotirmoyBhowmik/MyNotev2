@@ -1,28 +1,35 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { Node, mergeAttributes } from '@tiptap/core';
-import mermaid from 'mermaid';
-import { Loader2, AlertCircle, Save, Maximize2, Edit3 } from 'lucide-react';
+import { Loader2, AlertCircle, Save, Maximize2, Edit3, Shield } from 'lucide-react';
 
-// ─── THEME CONFIGURATION ───────────────────────────────────────────────────
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'base',
-  securityLevel: 'loose',
-  fontFamily: 'Inter, system-ui, sans-serif',
-  themeVariables: {
-    primaryColor: '#3b82f6',
-    primaryTextColor: '#fff',
-    lineColor: '#3b82f6',
-    secondaryColor: '#1e293b',
-    tertiaryColor: '#0f172a',
-    mainBkg: '#0f172a',
-    nodeBorder: '#3b82f6',
-    clusterBkg: '#1e293b',
-    titleColor: '#fff',
-    edgeLabelBackground: '#1e293b',
-  }
-});
+// ─── DYNAMIC MERMAID LOADER ───────────────────────────────────────────────
+let mermaidLib: any = null;
+
+const loadMermaid = async () => {
+  if (mermaidLib) return mermaidLib;
+  const m = (await import('mermaid')).default;
+  m.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    securityLevel: 'strict', // Production-ready security
+    fontFamily: 'Inter, system-ui, sans-serif',
+    themeVariables: {
+      primaryColor: '#3b82f6',
+      primaryTextColor: '#fff',
+      lineColor: '#3b82f6',
+      secondaryColor: '#1e293b',
+      tertiaryColor: '#0f172a',
+      mainBkg: '#0f172a',
+      nodeBorder: '#3b82f6',
+      clusterBkg: '#1e293b',
+      titleColor: '#fff',
+      edgeLabelBackground: '#1e293b',
+    }
+  });
+  mermaidLib = m;
+  return m;
+};
 
 const MermaidComponent = ({ node, updateAttributes }: any) => {
   const [svg, setSvg] = useState('');
@@ -37,11 +44,13 @@ const MermaidComponent = ({ node, updateAttributes }: any) => {
     setLoading(true);
     try {
       setError(null);
-      // Clean up previous mermaid artifacts if any leak
+      const m = await loadMermaid();
+      
+      // Clean up previous mermaid artifacts
       const container = document.getElementById('d' + renderId.current);
       if (container) container.remove();
 
-      const { svg: renderedSvg } = await mermaid.render(renderId.current, chartCode);
+      const { svg: renderedSvg } = await m.render(renderId.current, chartCode);
       setSvg(renderedSvg);
     } catch (err: any) {
       console.warn("Mermaid Syntax Error:", err);
@@ -72,7 +81,12 @@ const MermaidComponent = ({ node, updateAttributes }: any) => {
       {isEditing ? (
         <div className="mermaid-live-editor">
           <div className="mermaid-editor-header">
-             <span className="text-xs font-bold uppercase tracking-wider opacity-50">Diagram Editor</span>
+             <div className="flex items-center gap-2">
+               <span className="text-xs font-bold uppercase tracking-wider opacity-50">Diagram Editor</span>
+               <div className="flex items-center gap-1 text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded border border-green-500/20">
+                 <Shield size={10} /> Strict Mode
+               </div>
+             </div>
              <button className="mermaid-save-btn-v3" onClick={handleSave}>
                <Save size={12} /> Save & Render
              </button>

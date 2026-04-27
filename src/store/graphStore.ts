@@ -41,7 +41,7 @@ export interface Page {
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
-  sort_order: number;
+  sort_order?: number;
 }
 
 interface GraphState {

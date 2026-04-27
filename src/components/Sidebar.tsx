@@ -248,7 +248,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
         <button className="sidebar-quick-btn" onClick={() => handleNewFolder(null)} title="New Folder">
           <FolderPlus size={14} /> Folder
         </button>
-        <button className="sidebar-quick-btn" onClick={async () => await createDailyPage()}>
+        <button className="sidebar-quick-btn" onClick={() => handleNewKanban(null)} title="New Kanban">
+          <Layout size={14} /> Kanban
+        </button>
+        <button className="sidebar-quick-btn" onClick={async () => await createDailyPage()} title="Daily Note">
           <Calendar size={14} /> Today
         </button>
       </div>

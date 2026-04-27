@@ -80,7 +80,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 300, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="h-full w-80 border-l border-[var(--glass-border)] glass-blur overflow-hidden"
+            className="h-full w-80 min-w-[320px] flex-shrink-0 border-l border-[var(--glass-border)] glass-blur overflow-hidden relative z-40"
           >
             <Inspector />
           </motion.aside>

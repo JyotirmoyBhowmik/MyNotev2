@@ -1,7 +1,11 @@
 import React, { memo } from 'react';
-import { Settings, Info, History, Share2, Tag, Layers } from 'lucide-react';
+import { Settings, Info, History, Share2, Tag, Layers, Link } from 'lucide-react';
+import { useGraphStore } from '../store/graphStore';
+import { BacklinksPanel } from './BacklinksPanel';
 
 export const Inspector: React.FC = memo(() => {
+  const activePageId = useGraphStore(s => s.activePageId);
+  
   return (
     <div className="flex h-full flex-col p-4">
       <div className="mb-6 flex items-center justify-between border-b border-[var(--glass-border)] pb-4">
@@ -19,19 +23,12 @@ export const Inspector: React.FC = memo(() => {
           </div>
         </section>
 
-        <section>
-          <h3 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--electric-blue)]">
-            <Layers size={12} /> Connections
+        <section className="flex-1 overflow-y-auto min-h-0">
+          <h3 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--electric-blue)] sticky top-0 bg-[var(--obsidian-surface)] z-10 py-1">
+            <Link size={12} /> Linked References
           </h3>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-white/5">
-              <span className="text-xs">Backlinks</span>
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">0</span>
-            </div>
-            <div className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-white/5">
-              <span className="text-xs">Outgoing</span>
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">0</span>
-            </div>
+          <div className="rounded-lg border border-[var(--glass-border)] bg-white/5 overflow-hidden">
+            <BacklinksPanel pageId={activePageId || ''} />
           </div>
         </section>
 

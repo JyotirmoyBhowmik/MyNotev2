@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const { 
     pages, trash, activePageId, setActivePage, createPage, createFolder,
     deletePage, renamePage, createDailyPage, movePage,
-    restorePage, permanentlyDeletePage, emptyTrash
+    restorePage, permanentlyDeletePage, emptyTrash, reorderPage
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
   const { setCommandPaletteOpen } = useUIStore();

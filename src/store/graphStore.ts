@@ -60,7 +60,7 @@ interface GraphState {
   setActivePage: (id: string) => void;
 
   // Pages
-  createPage: (title: string, type?: 'normal' | 'journal' | 'folder', parentId?: string | null) => Promise<Page>;
+  createPage: (title: string, type?: 'normal' | 'journal' | 'folder' | 'kanban', parentId?: string | null) => Promise<Page>;
   createFolder: (title: string, parentId?: string | null) => Promise<Page>;
   deletePage: (id: string) => Promise<void>;
   renamePage: (id: string, title: string) => Promise<void>;

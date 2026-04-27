@@ -6,13 +6,19 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import Table from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
 import { useState, useCallback, useEffect, useRef, memo, useMemo } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import {
   Bold, Italic, Code, Strikethrough, Link2, List, ListOrdered,
-  Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo
+  Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo,
+  Grid
 } from 'lucide-react'
 import { BlockReference } from '../extensions/BlockReference'
+import { MermaidExtension } from '../lib/MermaidExtension'
 import './NexusEditor.css'
 
 interface NexusEditorProps {
@@ -93,6 +99,11 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     }),
     TaskList,
     TaskItem.configure({ nested: true }),
+    Table.configure({ resizable: true }),
+    TableRow,
+    TableHeader,
+    TableCell,
+    MermaidExtension,
   ], []);
 
   const editorOptions = useMemo(() => ({
@@ -198,6 +209,9 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
             </ToolbarBtn>
             <ToolbarBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} active={false} title="Divider">
               <Minus size={14} />
+            </ToolbarBtn>
+            <ToolbarBtn onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} active={false} title="Insert Table">
+              <Grid size={14} />
             </ToolbarBtn>
           </div>
           <div className="nexus-toolbar-sep" />

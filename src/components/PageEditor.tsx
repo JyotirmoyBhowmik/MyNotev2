@@ -158,90 +158,96 @@ export const PageEditor: React.FC = () => {
         {/* Editor area - split or single */}
         <div className={`page-editor-body ${splitView ? 'split' : ''}`}>
           <div className={`page-editor ${isTrashed ? 'trashed' : ''}`}>
-            <div className="page-header">
-              {/* Breadcrumbs */}
-              <div className="page-breadcrumbs">
-                {getBreadcrumbs().map((crumb) => (
-                  <React.Fragment key={crumb.id}>
-                    <span 
-                      className="breadcrumb-item" 
-                      onClick={() => useGraphStore.getState().setActivePage(crumb.id)}
-                    >
-                      {crumb.title}
-                    </span>
-                    <span className="breadcrumb-separator">/</span>
-                  </React.Fragment>
-                ))}
-                <span className="breadcrumb-current">{page.title}</span>
-              </div>
+            {page.type === 'kanban' ? (
+              <KanbanView pageId={activePageId} />
+            ) : (
+              <>
+                <div className="page-header">
+                  {/* Breadcrumbs */}
+                  <div className="page-breadcrumbs">
+                    {getBreadcrumbs().map((crumb) => (
+                      <React.Fragment key={crumb.id}>
+                        <span 
+                          className="breadcrumb-item" 
+                          onClick={() => useGraphStore.getState().setActivePage(crumb.id)}
+                        >
+                          {crumb.title}
+                        </span>
+                        <span className="breadcrumb-separator">/</span>
+                      </React.Fragment>
+                    ))}
+                    <span className="breadcrumb-current">{page.title}</span>
+                  </div>
 
-              <div className="page-icon" onClick={() => {
-                const icon = prompt('Enter an emoji for this page:', page.icon || '📄');
-                if (icon !== null) updatePageIcon(page.id, icon);
-              }}>
-                {page.icon || (page.type === 'journal' ? '📅' : '📄')}
-              </div>
+                  <div className="page-icon" onClick={() => {
+                    const icon = prompt('Enter an emoji for this page:', page.icon || '📄');
+                    if (icon !== null) updatePageIcon(page.id, icon);
+                  }}>
+                    {page.icon || (page.type === 'journal' ? '📅' : '📄')}
+                  </div>
 
-              <div className="page-title-row">
-                {editingTitle ? (
-                  <input
-                    className="page-title-input"
-                    value={titleDraft}
-                    onChange={e => setTitleDraft(e.target.value)}
-                    onBlur={handleTitleSave}
-                    onKeyDown={e => { if (e.key === 'Enter') handleTitleSave(); if (e.key === 'Escape') setEditingTitle(false); }}
-                    autoFocus
+                  <div className="page-title-row">
+                    {editingTitle ? (
+                      <input
+                        className="page-title-input"
+                        value={titleDraft}
+                        onChange={e => setTitleDraft(e.target.value)}
+                        onBlur={handleTitleSave}
+                        onKeyDown={e => { if (e.key === 'Enter') handleTitleSave(); if (e.key === 'Escape') setEditingTitle(false); }}
+                        autoFocus
+                      />
+                    ) : (
+                      <h1 className="page-title" onClick={() => { setEditingTitle(true); setTitleDraft(page.title); }}>
+                        {page.title}
+                      </h1>
+                    )}
+                    <div className="page-actions">
+                      <button className="page-action-btn" onClick={() => { setEditingTitle(true); setTitleDraft(page.title); }} title="Rename">
+                        <Edit3 size={14} />
+                      </button>
+                      <button className={`page-action-btn ${page.is_favorite ? 'active' : ''}`} onClick={() => favoritePage(page.id, !page.is_favorite)} title={page.is_favorite ? 'Unfavorite' : 'Favorite'}>
+                        <Star size={14} fill={page.is_favorite ? 'currentColor' : 'none'} />
+                      </button>
+                      <button className="page-action-btn" onClick={() => setShowTemplates(true)} title="Insert template (Ctrl+Shift+T)">
+                        <BookMarked size={14} />
+                      </button>
+                      <button className={`page-action-btn ${viewMode === 'preview' ? 'active' : ''}`} onClick={toggleViewMode} title="Preview (Ctrl+E)">
+                        <Eye size={14} />
+                      </button>
+                      <button className="page-action-btn" onClick={() => setShareOpen(true)} title="Share Page">
+                        <Share2 size={14} />
+                      </button>
+                      <button className={`page-action-btn ${rightSidebarOpen ? 'active' : ''}`} onClick={toggleRightSidebar} title="Right panel (Ctrl+\)">
+                        <PanelRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {page.tags?.length > 0 && (
+                    <div className="page-tags">
+                      {page.tags.map(tag => <span key={tag} className="tag-chip">#{tag}</span>)}
+                    </div>
+                  )}
+
+                  <div className="page-meta">
+                    <span className="page-meta-type">{page.type === 'journal' ? '📅 Journal' : (page.type === 'kanban' ? '📋 Kanban' : '📄 Page')}</span>
+                    {pageBacklinks.length > 0 && (
+                      <span className="page-meta-links" onClick={toggleRightSidebar}>
+                        🔗 {pageBacklinks.length} backlink{pageBacklinks.length > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="page-editor-content-area">
+                  <NexusEditor 
+                    pageId={activePageId} 
+                    onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} 
+                    readOnly={isTrashed}
                   />
-                ) : (
-                  <h1 className="page-title" onClick={() => { setEditingTitle(true); setTitleDraft(page.title); }}>
-                    {page.title}
-                  </h1>
-                )}
-                <div className="page-actions">
-                  <button className="page-action-btn" onClick={() => { setEditingTitle(true); setTitleDraft(page.title); }} title="Rename">
-                    <Edit3 size={14} />
-                  </button>
-                  <button className={`page-action-btn ${page.is_favorite ? 'active' : ''}`} onClick={() => favoritePage(page.id, !page.is_favorite)} title={page.is_favorite ? 'Unfavorite' : 'Favorite'}>
-                    <Star size={14} fill={page.is_favorite ? 'currentColor' : 'none'} />
-                  </button>
-                  <button className="page-action-btn" onClick={() => setShowTemplates(true)} title="Insert template (Ctrl+Shift+T)">
-                    <BookMarked size={14} />
-                  </button>
-                  <button className={`page-action-btn ${viewMode === 'preview' ? 'active' : ''}`} onClick={toggleViewMode} title="Preview (Ctrl+E)">
-                    <Eye size={14} />
-                  </button>
-                  <button className="page-action-btn" onClick={() => setShareOpen(true)} title="Share Page">
-                    <Share2 size={14} />
-                  </button>
-                  <button className={`page-action-btn ${rightSidebarOpen ? 'active' : ''}`} onClick={toggleRightSidebar} title="Right panel (Ctrl+\)">
-                    <PanelRight size={14} />
-                  </button>
                 </div>
-              </div>
-
-              {page.tags?.length > 0 && (
-                <div className="page-tags">
-                  {page.tags.map(tag => <span key={tag} className="tag-chip">#{tag}</span>)}
-                </div>
-              )}
-
-              <div className="page-meta">
-                <span className="page-meta-type">{page.type === 'journal' ? '📅 Journal' : '📄 Page'}</span>
-                {pageBacklinks.length > 0 && (
-                  <span className="page-meta-links" onClick={toggleRightSidebar}>
-                    🔗 {pageBacklinks.length} backlink{pageBacklinks.length > 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="page-editor-content-area">
-              <NexusEditor 
-                pageId={activePageId} 
-                onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} 
-                readOnly={isTrashed}
-              />
-            </div>
+              </>
+            )}
           </div>
           
           {splitView && (
@@ -268,7 +274,13 @@ export const PageEditor: React.FC = () => {
       <CommandPalette onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />
       <ContextMenu />
       {showTemplates && activePageId && (
-        <TemplateModal pageId={activePageId} onClose={() => setShowTemplates(false)} />
+        <TemplateModal 
+          onClose={() => setShowTemplates(false)} 
+          onApply={async (content) => {
+            await useGraphStore.getState().savePageContent(activePageId, content);
+            setShowTemplates(false);
+          }}
+        />
       )}
       {shareOpen && (
         <ShareModal pageTitle={page?.title || 'Page'} onClose={() => setShareOpen(false)} />

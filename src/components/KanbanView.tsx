@@ -1,5 +1,7 @@
+import React from 'react';
 import { useGraphStore } from '../store/graphStore';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, GripVertical } from 'lucide-react';
+import { useDrag, useDrop } from 'react-dnd';
 import './KanbanView.css';
 
 interface KanbanViewProps {
@@ -7,7 +9,7 @@ interface KanbanViewProps {
 }
 
 export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
-  const { pages, blocks, addBlock, updateBlock, deleteBlock } = useGraphStore();
+  const { pages, blocks, addBlock, updateBlock, deleteBlock, moveBlock } = useGraphStore();
   const page = pages[pageId];
   if (!page) return null;
 
@@ -20,80 +22,102 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
     }
   };
 
-  const handleEditColumn = async (colId: string, current: string) => {
-    const title = prompt('Rename Column:', current);
-    if (title !== null && title !== current) {
-      await updateBlock(colId, title);
-    }
-  };
-
-  const handleDeleteColumn = async (colId: string) => {
-    if (confirm('Delete this column and all its tasks?')) {
-      await deleteBlock(colId);
-    }
-  };
-
-  const handleAddItem = async (columnId: string) => {
-    const content = prompt('Task Name:');
-    if (content) {
-      const column = blocks[columnId];
-      await addBlock(pageId, columnId, column.children.length, content, 'text');
-    }
-  };
-
-  const handleEditItem = async (itemId: string, current: string) => {
-    const content = prompt('Edit Task:', current);
-    if (content !== null && content !== current) {
-      await updateBlock(itemId, content);
-    }
-  };
-
-  const handleDeleteItem = async (itemId: string) => {
-    if (confirm('Delete this task?')) {
-      await deleteBlock(itemId);
-    }
-  };
-
   return (
     <div className="kanban-container">
       <div className="kanban-board">
-        {columns.map(col => (
-          <div key={col.uuid} className="kanban-column">
-            <div className="kanban-column-header">
-              <h3 onClick={() => handleEditColumn(col.uuid, col.content)}>{col.content}</h3>
-              <div className="kanban-col-actions">
-                <button onClick={() => handleAddItem(col.uuid)} title="Add Task"><Plus size={14} /></button>
-                <button onClick={() => handleDeleteColumn(col.uuid)} title="Delete Column"><Trash2 size={14} /></button>
-              </div>
-            </div>
-            
-            <div className="kanban-items">
-              {col.children.map(itemUuid => {
-                const item = blocks[itemUuid];
-                if (!item) return null;
-                return (
-                  <div key={item.uuid} className="kanban-item group">
-                    <div className="kanban-item-content" onClick={() => handleEditItem(item.uuid, item.content)}>
-                      {item.content}
-                    </div>
-                    <div className="kanban-item-actions">
-                      <button onClick={() => handleEditItem(item.uuid, item.content)}><Edit2 size={12} /></button>
-                      <button onClick={() => handleDeleteItem(item.uuid)}><Trash2 size={12} /></button>
-                    </div>
-                  </div>
-                );
-              })}
-              <button className="kanban-add-item-inline" onClick={() => handleAddItem(col.uuid)}>
-                + Add Item
-              </button>
-            </div>
-          </div>
+        {columns.map((col, index) => (
+          <KanbanColumn 
+            key={col.uuid} 
+            column={col} 
+            pageId={pageId} 
+            index={index}
+          />
         ))}
         
         <div className="kanban-column add-column-placeholder" onClick={handleAddColumn}>
           <Plus size={20} />
           <span>Add Column</span>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const KanbanColumn: React.FC<{ column: any; pageId: string; index: number }> = ({ column, pageId, index }) => {
+  const { blocks, addBlock, updateBlock, deleteBlock, moveBlock } = useGraphStore();
+  
+  const [, drop] = useDrop({
+    accept: 'KANBAN_ITEM',
+    drop: (item: { id: string; sourceColId: string }) => {
+      if (item.sourceColId !== column.uuid) {
+        moveBlock(item.id, column.uuid, column.children.length);
+      }
+    },
+  });
+
+  const handleAddItem = async () => {
+    const content = prompt('Task Name:');
+    if (content) {
+      await addBlock(pageId, column.uuid, column.children.length, content, 'text');
+    }
+  };
+
+  return (
+    <div ref={drop as any} className="kanban-column">
+      <div className="kanban-column-header">
+        <h3 onClick={() => {
+          const t = prompt('Rename Column:', column.content);
+          if (t) updateBlock(column.uuid, t);
+        }}>{column.content}</h3>
+        <div className="kanban-col-actions">
+          <button onClick={handleAddItem} title="Add Task"><Plus size={14} /></button>
+          <button onClick={() => confirm('Delete column?') && deleteBlock(column.uuid)} title="Delete Column"><Trash2 size={14} /></button>
+        </div>
+      </div>
+      
+      <div className="kanban-items">
+        {column.children.map((itemUuid: string, idx: number) => (
+          <KanbanItem 
+            key={itemUuid} 
+            itemId={itemUuid} 
+            colId={column.uuid} 
+            index={idx} 
+          />
+        ))}
+        <button className="kanban-add-item-inline" onClick={handleAddItem}>
+          + Add Item
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const KanbanItem: React.FC<{ itemId: string; colId: string; index: number }> = ({ itemId, colId, index }) => {
+  const { blocks, updateBlock, deleteBlock } = useGraphStore();
+  const item = blocks[itemId];
+  if (!item) return null;
+
+  const [{ isDragging }, drag] = useDrag({
+    type: 'KANBAN_ITEM',
+    item: { id: itemId, sourceColId: colId },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <div 
+      ref={drag as any} 
+      className={`kanban-item group ${isDragging ? 'opacity-40' : ''}`}
+    >
+      <div className="kanban-item-content" onClick={() => {
+        const c = prompt('Edit Task:', item.content);
+        if (c) updateBlock(item.uuid, c);
+      }}>
+        {item.content}
+      </div>
+      <div className="kanban-item-actions">
+        <button onClick={() => confirm('Delete task?') && deleteBlock(item.uuid)}><Trash2 size={12} /></button>
       </div>
     </div>
   );

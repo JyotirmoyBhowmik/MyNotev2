@@ -15,11 +15,13 @@ interface GraphNode extends d3.SimulationNodeDatum {
   title: string;
   isActive: boolean;
   isJournal: boolean;
+  icon: string;
 }
 
 interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
   source: string | GraphNode;
   target: string | GraphNode;
+  type: 'ref' | 'hierarchy';
 }
 
 export const GraphView: React.FC<GraphViewProps> = ({ onClose, activePageId }) => {
@@ -35,16 +37,29 @@ export const GraphView: React.FC<GraphViewProps> = ({ onClose, activePageId }) =
     const height = svgRef.current.clientHeight || 600;
 
     const nodes: GraphNode[] = Object.values(pages).map(p => ({
-      id: p.id, title: p.title, isActive: p.id === activePageId, isJournal: p.type === 'journal',
+      id: p.id, 
+      title: p.title, 
+      isActive: p.id === activePageId, 
+      isJournal: p.type === 'journal',
+      icon: p.icon || (p.type === 'folder' ? '📁' : (p.type === 'journal' ? '📅' : '📄'))
     }));
 
     const links: GraphLink[] = [];
+    
+    // 1. Reference Links (Outlinks)
     Object.entries(outlinks).forEach(([sourceId, targetIds]) => {
       targetIds.forEach(targetId => {
         if (pages[sourceId] && pages[targetId]) {
-          links.push({ source: sourceId, target: targetId });
+          links.push({ source: sourceId, target: targetId, type: 'ref' });
         }
       });
+    });
+
+    // 2. Hierarchy Links (Parent-Child)
+    Object.values(pages).forEach(p => {
+      if (p.parent_page_id && pages[p.parent_page_id]) {
+        links.push({ source: p.parent_page_id, target: p.id, type: 'hierarchy' });
+      }
     });
 
     const svg = d3.select(svgRef.current);
@@ -67,15 +82,16 @@ export const GraphView: React.FC<GraphViewProps> = ({ onClose, activePageId }) =
     // Links
     const link = g.append('g').selectAll('line')
       .data(links).join('line')
-      .attr('stroke', '#3b82f633')
-      .attr('stroke-width', 1.5)
+      .attr('stroke', d => d.type === 'hierarchy' ? '#3b82f666' : '#3b82f622')
+      .attr('stroke-width', d => d.type === 'hierarchy' ? 2 : 1)
+      .attr('stroke-dasharray', d => d.type === 'hierarchy' ? '4 2' : 'none')
       .attr('marker-end', 'url(#arrow)');
 
     // Arrow marker
     svg.append('defs').append('marker')
       .attr('id', 'arrow').attr('viewBox', '0 -5 10 10').attr('refX', 22).attr('refY', 0)
-      .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
-      .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#3b82f6');
+      .attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+      .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#3b82f644');
 
     // Nodes
     const node = g.append('g').selectAll('g')
@@ -89,16 +105,22 @@ export const GraphView: React.FC<GraphViewProps> = ({ onClose, activePageId }) =
       ) as any);
 
     node.append('circle')
-      .attr('r', d => d.isActive ? 14 : 9)
-      .attr('fill', d => d.isActive ? '#3b82f6' : d.isJournal ? '#8b5cf6' : '#1e293b')
-      .attr('stroke', d => d.isActive ? '#60a5fa' : '#3b82f6')
+      .attr('r', d => d.isActive ? 16 : 12)
+      .attr('fill', d => d.isActive ? '#3b82f6' : d.isJournal ? '#8b5cf633' : '#1e293b')
+      .attr('stroke', d => d.isActive ? '#60a5fa' : '#3b82f666')
       .attr('stroke-width', d => d.isActive ? 3 : 1.5);
 
     node.append('text')
-      .attr('dy', 24)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#a1a1aa')
-      .attr('font-size', '11px')
+      .attr('dominant-baseline', 'central')
+      .attr('font-size', '12px')
+      .text(d => d.icon);
+
+    node.append('text')
+      .attr('dy', 28)
+      .attr('text-anchor', 'middle')
+      .attr('fill', d => d.isActive ? '#fff' : '#a1a1aa')
+      .attr('font-size', '10px')
       .attr('font-family', 'Inter, sans-serif')
       .text(d => d.title.length > 20 ? d.title.substring(0, 18) + '…' : d.title);
 
@@ -124,9 +146,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ onClose, activePageId }) =
         </div>
       </div>
       <div className="graph-legend">
-        <span><span className="legend-dot active" /> Current page</span>
+        <span><span className="legend-dot active" /> Current</span>
         <span><span className="legend-dot journal" /> Journal</span>
         <span><span className="legend-dot normal" /> Page</span>
+        <span><span className="legend-line hierarchy" /> Hierarchy</span>
+        <span><span className="legend-line ref" /> Reference</span>
       </div>
       <svg ref={svgRef} className="graph-svg" />
     </div>

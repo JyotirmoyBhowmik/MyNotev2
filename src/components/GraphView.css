@@ -57,8 +57,18 @@
   margin-right: 5px;
 }
 .legend-dot.active { background: var(--accent); }
-.legend-dot.journal { background: var(--purple); }
-.legend-dot.normal { background: #1e293b; border: 1.5px solid var(--accent); }
+.legend-dot.journal { background: #8b5cf633; border: 1px solid #8b5cf6; }
+.legend-dot.normal { background: #1e293b; border: 1px solid #3b82f666; }
+
+.legend-line {
+  display: inline-block;
+  width: 15px;
+  height: 2px;
+  border-radius: 1px;
+  margin-right: 5px;
+}
+.legend-line.hierarchy { background: #3b82f666; border-bottom: 1px dashed #3b82f6; }
+.legend-line.ref { background: #3b82f622; }
 
 .graph-svg {
   flex: 1;

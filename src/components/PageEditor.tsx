@@ -230,7 +230,9 @@ export const PageEditor: React.FC = () => {
                   )}
 
                   <div className="page-meta">
-                    <span className="page-meta-type">{page.type === 'journal' ? '📅 Journal' : (page.type === 'kanban' ? '📋 Kanban' : '📄 Page')}</span>
+                    <span className="page-meta-type">
+                      {page.type === 'journal' ? '📅 Journal' : ((page.type as string) === 'kanban' ? '📋 Kanban' : '📄 Page')}
+                    </span>
                     {pageBacklinks.length > 0 && (
                       <span className="page-meta-links" onClick={toggleRightSidebar}>
                         🔗 {pageBacklinks.length} backlink{pageBacklinks.length > 1 ? 's' : ''}

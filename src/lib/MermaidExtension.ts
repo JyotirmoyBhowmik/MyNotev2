@@ -30,7 +30,7 @@ export const MermaidExtension = Node.create({
   },
 
   addNodeView() {
-    return ({ node, getPos, editor }) => {
+    return ({ node }) => {
       const dom = document.createElement('div');
       dom.className = 'mermaid-container';
       

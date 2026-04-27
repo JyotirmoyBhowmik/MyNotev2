@@ -36,7 +36,9 @@ export const GraphView: React.FC<GraphViewProps> = ({ onClose, activePageId }) =
     const width = svgRef.current.clientWidth || 800;
     const height = svgRef.current.clientHeight || 600;
 
-    const nodes: GraphNode[] = Object.values(pages).map(p => ({
+    const nodes: GraphNode[] = Object.values(pages)
+      .filter(p => !p.deleted_at)
+      .map(p => ({
       id: p.id, 
       title: p.title, 
       isActive: p.id === activePageId, 

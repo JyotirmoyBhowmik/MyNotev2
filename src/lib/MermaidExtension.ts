@@ -11,7 +11,7 @@ mermaid.initialize({
 export const MermaidExtension = Node.create({
   name: 'mermaid',
   group: 'block',
-  atom: true, // v3.3 - Make it an atom so it doesn't split or merge unexpectedly
+  atom: true,
 
   addAttributes() {
     return {
@@ -35,18 +35,31 @@ export const MermaidExtension = Node.create({
       const preview = document.createElement('div');
       preview.className = 'mermaid-preview';
       
+      const editorWrap = document.createElement('div');
+      editorWrap.className = 'mermaid-editor-wrap';
+      editorWrap.style.display = 'none';
+
       const editorArea = document.createElement('textarea');
       editorArea.className = 'mermaid-editor';
       editorArea.value = node.attrs.code;
-      editorArea.style.display = 'none';
+
+      const controls = document.createElement('div');
+      controls.className = 'mermaid-editor-controls';
+      
+      const doneBtn = document.createElement('button');
+      doneBtn.innerText = 'Save Diagram';
+      doneBtn.className = 'mermaid-save-btn';
+
+      controls.appendChild(doneBtn);
+      editorWrap.appendChild(editorArea);
+      editorWrap.appendChild(controls);
 
       container.appendChild(preview);
-      container.appendChild(editorArea);
+      container.appendChild(editorWrap);
 
       const renderDiagram = async (code: string) => {
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
         try {
-          // Clear any previous error messages that might have leaked
           const existingError = document.getElementById('dmermaid-' + id);
           if (existingError) existingError.remove();
 
@@ -54,8 +67,6 @@ export const MermaidExtension = Node.create({
           preview.innerHTML = svg;
         } catch (err) {
           preview.innerHTML = `<div class="mermaid-error">Invalid Mermaid Syntax</div>`;
-          // Clean up mermaid's internal error UI if it leaked
-          console.warn('[Mermaid] Render failed:', err);
         }
       };
 
@@ -63,16 +74,16 @@ export const MermaidExtension = Node.create({
 
       container.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (editorArea.style.display === 'none') {
-          editorArea.style.display = 'block';
+        if (editorWrap.style.display === 'none') {
+          editorWrap.style.display = 'block';
           preview.style.display = 'none';
           editorArea.focus();
         }
       });
 
-      editorArea.addEventListener('blur', () => {
+      const save = () => {
         const newCode = editorArea.value;
-        editorArea.style.display = 'none';
+        editorWrap.style.display = 'none';
         preview.style.display = 'block';
         
         if (newCode !== node.attrs.code) {
@@ -81,10 +92,25 @@ export const MermaidExtension = Node.create({
           }
           renderDiagram(newCode);
         }
+      };
+
+      doneBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        save();
       });
 
-      // Prevent Tiptap from handling enter/delete inside the textarea
+      editorArea.addEventListener('blur', (e) => {
+        // Only save if we didn't click the save button
+        if (!(e.relatedTarget instanceof HTMLButtonElement)) {
+           save();
+        }
+      });
+
       editorArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          save();
+        }
         if (e.key === 'Enter') e.stopPropagation();
       });
 
@@ -98,12 +124,6 @@ export const MermaidExtension = Node.create({
           }
           return true;
         },
-        selectNode: () => {
-          container.classList.add('selected');
-        },
-        deselectNode: () => {
-          container.classList.remove('selected');
-        }
       };
     };
   },

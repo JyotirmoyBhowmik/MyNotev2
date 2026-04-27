@@ -34,7 +34,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
 
-  const allPages = Object.values(pages).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const allPages = Object.values(pages)
+    .filter(p => !p.deleted_at)
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const favoritePages = allPages.filter(p => p.is_favorite);
   const journalPages = allPages.filter(p => p.type === 'journal').sort((a, b) => b.created_at - a.created_at);
   

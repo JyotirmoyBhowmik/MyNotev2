@@ -192,19 +192,41 @@
   min-height: 50px;
 }
 
+.mermaid-editor-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .mermaid-editor {
   width: 100%;
-  min-height: 120px;
+  min-height: 150px;
   background: #000;
   color: #86efac;
   font-family: 'Fira Code', monospace;
   font-size: 13px;
-  border: none;
-  padding: 10px;
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 6px;
   outline: none;
   resize: vertical;
 }
+
+.mermaid-editor-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mermaid-save-btn {
+  padding: 6px 16px;
+  background: var(--accent);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.mermaid-save-btn:hover { opacity: 0.9; }
 
 .mermaid-error {
   color: var(--red);

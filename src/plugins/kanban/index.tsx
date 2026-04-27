@@ -11,9 +11,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus, Trash2, GripVertical, Layout } from 'lucide-react';
-import { NexusPlugin } from '../../types/plugin';
+import type { NexusPlugin } from '../../types/plugin';
 import { NexusErrorBoundary } from '../../components/NexusErrorBoundary';
-import { KanbanBoardData, KanbanBoardDataSchema, KanbanCard } from '../../lib/schemas';
+import { KanbanBoardDataSchema } from '../../lib/schemas';
+import type { KanbanBoardData, KanbanCard } from '../../lib/schemas';
 
 const generateId = () => `id-${Math.random().toString(36).substr(2, 9)}`;
 

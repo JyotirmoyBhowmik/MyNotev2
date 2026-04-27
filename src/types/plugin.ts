@@ -1,5 +1,5 @@
-import { AnyExtension } from '@tiptap/core';
-import { ReactNode } from 'react';
+import type { AnyExtension } from '@tiptap/core';
+import type { ReactNode } from 'react';
 
 export interface NexusPlugin {
   id: string;

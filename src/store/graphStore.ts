@@ -5,7 +5,7 @@ import { useLinkStore } from './linkStore';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { transactionMiddleware } from './middleware';
-import { BlockSchema, PageSchema } from '../lib/schemas';
+import type { BlockSchema } from '../lib/schemas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +110,10 @@ export const useGraphStore = create<GraphState>()(
     saveLocks: {},
     pendingSaves: {},
     trash: { pages: {}, blocks: {} },
+    undoStack: [],
+    redoStack: [],
+    isSyncing: false,
+    syncError: null,
     
     // Core actions
     setLoading: (loading) => set({ loading }),
@@ -703,14 +707,14 @@ export const useGraphStore = create<GraphState>()(
           const updated_at = Date.now();
           const blockData = { ...(get().blocks[blockUuid] || block), content: html, updated_at };
           
-          // Zod Validation
-          const validated = BlockSchema.parse(blockData);
-          
           set(s => ({
-            blocks: { ...s.blocks, [blockUuid]: { ...validated, _local_ts: updated_at } },
+            blocks: { 
+              ...s.blocks, 
+              [blockUuid]: { ...blockData, block_type: blockData.block_type as BlockType, _local_ts: updated_at } 
+            },
             nexusBlockCache: { ...s.nexusBlockCache, [pageId]: blockUuid }
           }));
-          await supabase.from('blocks').update(validated).eq('uuid', blockUuid);
+          await supabase.from('blocks').update({ content: html, updated_at }).eq('uuid', blockUuid);
         }
       } else {
         console.log('[NexusSave] Creating new block');
@@ -727,14 +731,14 @@ export const useGraphStore = create<GraphState>()(
         const validated = BlockSchema.parse(newBlock);
         
         set(s => ({
-          blocks: { ...s.blocks, [uuid]: { ...validated, _local_ts: now } },
+          blocks: { ...s.blocks, [uuid]: newBlock },
           nexusBlockCache: { ...s.nexusBlockCache, [pageId]: uuid },
           pages: {
             ...s.pages,
             [pageId]: { ...s.pages[pageId], root_blocks: [...(s.pages[pageId]?.root_blocks ?? []), uuid] }
           }
         }));
-        await supabase.from('blocks').insert(validated);
+        await supabase.from('blocks').insert(newBlock);
       }
     } catch (err) {
       console.error('[NexusSave] Failed:', err);

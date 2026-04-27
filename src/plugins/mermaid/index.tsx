@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { Node, mergeAttributes } from '@tiptap/core';
-import { Loader2, AlertCircle, Save, X, Edit3, Shield, Monitor } from 'lucide-react';
-import { NexusPlugin } from '../../types/plugin';
+import { Loader2, Save, X, Edit3, Shield } from 'lucide-react';
+import type { NexusPlugin } from '../../types/plugin';
 import { NexusErrorBoundary } from '../../components/NexusErrorBoundary';
 
 // ─── TYPES & HELPERS ───────────────────────────────────────────────────────

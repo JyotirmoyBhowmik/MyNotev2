@@ -19,6 +19,7 @@ import {
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCursor } from '@tiptap/extension-collaboration-cursor'
 import * as Y from 'yjs'
+import { HocuspocusProvider } from '@hocuspocus/provider'
 import { BlockReference } from '../extensions/BlockReference'
 import { getRegisteredExtensions } from '../lib/pluginRegistry'
 import './NexusEditor.css'
@@ -84,6 +85,14 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
 
   // v3.20 Plugin & Collab System
   const ydoc = useMemo(() => new Y.Doc(), [pageId]);
+  
+  const provider = useMemo(() => new HocuspocusProvider({
+    url: 'ws://localhost:1234', // Local development default
+    name: `nexus-page-${pageId}`,
+    document: ydoc,
+    onConnect: () => console.log('[NexusCollab] Connected'),
+    onDisconnect: () => console.log('[NexusCollab] Disconnected'),
+  }), [pageId, ydoc]);
   
   const extensions = useMemo(() => [
     StarterKit.configure({
@@ -169,6 +178,13 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       }
     }
   }, [pageId, editor, buildInitialContent]);
+
+  useEffect(() => {
+    return () => {
+      provider.destroy();
+      ydoc.destroy();
+    }
+  }, [provider, ydoc]);
 
   if (!pageId || !editor) return null
 

@@ -72,10 +72,13 @@ export const MermaidExtension = Node.create({
         
         // Update node content
         if (typeof getPos === 'function') {
-          editor.commands.insertContentAt(getPos(), {
-            type: 'mermaid',
-            content: [{ type: 'text', text: newContent }]
-          });
+          const pos = getPos();
+          if (typeof pos === 'number') {
+            editor.commands.insertContentAt(pos, {
+              type: 'mermaid',
+              content: [{ type: 'text', text: newContent }]
+            });
+          }
         }
         render(newContent);
       });

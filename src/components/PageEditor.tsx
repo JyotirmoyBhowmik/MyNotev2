@@ -13,6 +13,7 @@ import { Edit3, Star, Eye, PanelRight, BookMarked, Share2, Trash2, RotateCcw } f
 import { exportPageToMarkdown, downloadMarkdown } from '../hooks/useExport';
 import { ShareModal } from './ShareModal';
 import { KanbanView } from './KanbanView';
+import { supabase } from '../lib/supabase';
 import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {

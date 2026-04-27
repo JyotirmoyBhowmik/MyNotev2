@@ -41,6 +41,7 @@ export interface Page {
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
+  sort_order: number;
 }
 
 interface GraphState {
@@ -67,6 +68,7 @@ interface GraphState {
   updatePageIcon: (id: string, icon: string) => Promise<void>;
   createDailyPage: () => Promise<Page>;
   movePage: (id: string, newParentId: string | null) => Promise<void>;
+  reorderPage: (id: string, newOrder: number) => Promise<void>;
   restorePage: (id: string) => Promise<void>;
   permanentlyDeletePage: (id: string) => Promise<void>;
   emptyTrash: () => Promise<void>;
@@ -129,6 +131,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         parent_page_id: p.parent_page_id ?? null,
         icon: p.icon ?? null,
         deleted_at: p.deleted_at ?? null,
+        sort_order: p.sort_order ?? 0,
       };
       if (pageData.deleted_at) {
         trashPages[p.id] = pageData;
@@ -237,11 +240,13 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   // Pages
   createPage: async (title, type = 'normal', parentId = null) => {
     const user = useAuthStore.getState().user;
+    const sort_order = Object.values(get().pages).length;
     const newPage: Page = {
       id: uuidv4(), user_id: user!.id, title, type,
       root_blocks: [], is_favorite: false,
       parent_page_id: parentId, tags: [], icon: type === 'folder' ? '📁' : null,
       created_at: Date.now(), updated_at: Date.now(), deleted_at: null,
+      sort_order
     };
     const { error } = await supabase.from('pages').insert(newPage);
     if (error) throw new Error(error.message);
@@ -251,6 +256,11 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
   createFolder: async (title, parentId = null) => {
     return get().createPage(title, 'folder', parentId);
+  },
+
+  reorderPage: async (id, newOrder) => {
+    await supabase.from('pages').update({ sort_order: newOrder, updated_at: Date.now() }).eq('id', id);
+    set(s => ({ pages: { ...s.pages, [id]: { ...s.pages[id], sort_order: newOrder } } }));
   },
 
   deletePage: async (id) => {

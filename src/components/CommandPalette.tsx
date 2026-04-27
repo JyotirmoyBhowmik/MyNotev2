@@ -82,12 +82,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onNavigateToPage
       // Search results
       results.forEach(r => {
         items.push({
-          id: r.id, label: r.title,
-          sublabel: r.type === 'block' ? `in ${r.pageTitle}` : 'Page',
+          id: r.id, 
+          label: r.type === 'page' ? r.title : r.preview.substring(0, 80),
+          sublabel: r.type === 'block' ? `📄 in ${r.pageTitle}` : 'Page',
           icon: r.type === 'page' ? <FileText size={16} /> : <Hash size={16} />,
           action: () => {
             const pageId = r.type === 'page' ? r.id : r.pageId!;
             onNavigateToPage(pageId);
+            // Optional: could add logic to scroll to block
             close();
           }
         });

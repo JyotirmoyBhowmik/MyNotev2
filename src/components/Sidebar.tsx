@@ -34,7 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
 
-  const allPages = Object.values(pages);
+  const allPages = Object.values(pages).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   const favoritePages = allPages.filter(p => p.is_favorite);
   const journalPages = allPages.filter(p => p.type === 'journal').sort((a, b) => b.created_at - a.created_at);
   
@@ -50,8 +50,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
         tree.root.push(p);
       }
     });
+    // Sort tree children by sort_order just in case (already sorted via allPages)
     return tree;
-  }, [pages]);
+  }, [allPages]);
 
   const toggleSection = (key: keyof typeof expandedSections) =>
     setExpandedSections(s => ({ ...s, [key]: !s[key] }));
@@ -113,12 +114,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
       accept: 'PAGE',
       drop: (item: { id: string }, monitor) => {
         if (monitor.didDrop()) return;
-        movePage(item.id, page.id);
+        const dragId = item.id;
+        const hoverId = page.id;
+        if (dragId === hoverId) return;
+
+        // If target is a folder, move inside
+        if (page.type === 'folder') {
+          movePage(dragId, hoverId);
+        } else {
+          // Re-order: swap or move after
+          const dragPage = pages[dragId];
+          const hoverPage = pages[hoverId];
+          if (dragPage && hoverPage) {
+            // Move dragPage to hoverPage's parent and take its order
+            movePage(dragId, hoverPage.parent_page_id);
+            reorderPage(dragId, hoverPage.sort_order);
+            // We'd ideally shift all others, but for now, simple swap is a start
+            reorderPage(hoverId, dragPage.sort_order);
+          }
+        }
       },
       collect: (monitor) => ({
         isOver: monitor.isOver({ shallow: true }),
       }),
-    }));
+    }), [page, pages]);
 
     return (
       <div 
@@ -167,6 +186,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               </button>
               <button onClick={() => { setRenaming(page.id); setRenameDraft(page.title); setContextPage(null); }}>
                 <Edit3 size={12} /> Rename
+              </button>
+              <button onClick={() => { reorderPage(page.id, page.sort_order - 1.5); setContextPage(null); }}>
+                <ChevronRight size={12} className="-rotate-90" /> Move Up
+              </button>
+              <button onClick={() => { reorderPage(page.id, page.sort_order + 1.5); setContextPage(null); }}>
+                <ChevronRight size={12} className="rotate-90" /> Move Down
               </button>
               <button onClick={() => handleDelete(page.id)} className="danger">
                 <Trash2 size={12} /> Delete

@@ -30,7 +30,6 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
             key={col.uuid} 
             column={col} 
             pageId={pageId} 
-            index={index}
           />
         ))}
         
@@ -43,8 +42,8 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
   );
 };
 
-const KanbanColumn: React.FC<{ column: any; pageId: string; index: number }> = ({ column, pageId, index }) => {
-  const { blocks, addBlock, updateBlock, deleteBlock, moveBlock } = useGraphStore();
+const KanbanColumn: React.FC<{ column: any; pageId: string }> = ({ column, pageId }) => {
+  const { addBlock, updateBlock, deleteBlock, moveBlock } = useGraphStore();
   
   const [, drop] = useDrop({
     accept: 'KANBAN_ITEM',
@@ -81,7 +80,6 @@ const KanbanColumn: React.FC<{ column: any; pageId: string; index: number }> = (
             key={itemUuid} 
             itemId={itemUuid} 
             colId={column.uuid} 
-            index={idx} 
           />
         ))}
         <button className="kanban-add-item-inline" onClick={handleAddItem}>
@@ -92,7 +90,7 @@ const KanbanColumn: React.FC<{ column: any; pageId: string; index: number }> = (
   );
 };
 
-const KanbanItem: React.FC<{ itemId: string; colId: string; index: number }> = ({ itemId, colId, index }) => {
+const KanbanItem: React.FC<{ itemId: string; colId: string }> = ({ itemId, colId }) => {
   const { blocks, updateBlock, deleteBlock } = useGraphStore();
   const item = blocks[itemId];
   if (!item) return null;

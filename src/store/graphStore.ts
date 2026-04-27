@@ -758,5 +758,6 @@ export const useGraphStore = create<GraphState>()(
       if (!nexusBlock) return s;
       return { blocks: { ...s.blocks, [nexusBlock.uuid]: { ...nexusBlock, content, _local_ts: Date.now() } } };
     });
-  })
+  },
+}))
 );

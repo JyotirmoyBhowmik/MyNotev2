@@ -282,10 +282,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               {expandedSections.journal ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
               <Calendar size={12} /> Journal
             </div>
-            {expandedSections.journal && journalPages.slice(0, 7).map(p => (
-               <div key={p.id} className="sidebar-item" onClick={() => setActivePage(p.id)}>
+            {expandedSections.journal && journalPages.slice(0, 14).map(p => (
+               <div 
+                key={p.id} 
+                className={cn("sidebar-item", activePageId === p.id && "active")}
+                onClick={() => setActivePage(p.id)}
+                onContextMenu={(e) => { e.preventDefault(); setContextPage(p.id); }}
+              >
                 <span className="sidebar-item-icon">📅</span>
                 <span className="sidebar-item-label">{p.title}</span>
+                {contextPage === p.id && (
+                  <div className="sidebar-context-menu" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => handleDelete(p.id)} className="danger">
+                      <Trash2 size={12} /> Delete Note
+                    </button>
+                    <button onClick={() => setContextPage(null)}>Cancel</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

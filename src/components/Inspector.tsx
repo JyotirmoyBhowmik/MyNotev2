@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Settings, Info, History, Share2, Tag, Layers, Link } from 'lucide-react';
+import { Settings, Info, History, Share2, Tag, Link } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { BacklinksPanel } from './BacklinksPanel';
 

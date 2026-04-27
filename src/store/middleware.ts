@@ -7,11 +7,9 @@ export interface TransactionState {
   syncError: string | null;
 }
 
-export type TransactionMiddleware = <T extends TransactionState>(
+export const transactionMiddleware = <T extends TransactionState>(
   config: StateCreator<T, [], []>
-) => StateCreator<T, [], []>;
-
-export const transactionMiddleware: TransactionMiddleware = (config) => (set, get, api) => {
+): StateCreator<T, [], []> => (set, get, api) => {
   const initialState = config(
     (args) => {
       const prevState = { ...get() };

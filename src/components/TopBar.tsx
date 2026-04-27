@@ -5,6 +5,7 @@ import { Search, Download, Layout, BookOpen, ChevronRight, Image, Paperclip } fr
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { PresenceBar } from './PresenceBar';
+import { PanelLeft, PanelRight, Maximize2, Minimize2 } from 'lucide-react';
 import './TopBar.css';
 import './PresenceBar.css';
 
@@ -16,7 +17,16 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView }) => {
   const { pages, activePageId, setActivePage } = useGraphStore();
-  const { setCommandPaletteOpen, setJournalOpen } = useUIStore();
+  const { 
+    setCommandPaletteOpen, 
+    setJournalOpen, 
+    isSidebarOpen, 
+    toggleSidebar, 
+    isInspectorOpen, 
+    toggleInspector,
+    isFocusMode,
+    setFocusMode
+  } = useUIStore();
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
@@ -172,6 +182,31 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
 
       {/* Real-time collaboration */}
       <PresenceBar />
+
+      {/* Layout Controls */}
+      <div className="topbar-layout-controls flex items-center gap-1 border-l border-[var(--glass-border)] pl-2 ml-2">
+        <button 
+          className={`topbar-btn ${isSidebarOpen ? 'active' : ''}`} 
+          onClick={toggleSidebar} 
+          title="Toggle Sidebar (Navigation)"
+        >
+          <PanelLeft size={14} />
+        </button>
+        <button 
+          className={`topbar-btn ${isFocusMode ? 'active text-[var(--electric-blue)]' : ''}`} 
+          onClick={() => setFocusMode(!isFocusMode)} 
+          title="Toggle Focus Mode (Deep Work)"
+        >
+          {isFocusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+        </button>
+        <button 
+          className={`topbar-btn ${isInspectorOpen ? 'active' : ''}`} 
+          onClick={toggleInspector} 
+          title="Toggle Inspector (Metadata)"
+        >
+          <PanelRight size={14} />
+        </button>
+      </div>
 
       {/* Actions */}
       <div className="topbar-actions">

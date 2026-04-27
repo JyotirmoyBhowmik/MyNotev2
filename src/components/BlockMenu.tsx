@@ -4,7 +4,8 @@ import { useGraphStore } from '../store/graphStore';
 import type { BlockType } from '../store/graphStore';
 import {
   Type, Heading1, Heading2, Heading3, List, ListOrdered,
-  ChevronRight, Code2, Quote, AlertCircle, Minus, Table as TableIcon
+  ChevronRight, Code2, Quote, AlertCircle, Minus, Table as TableIcon,
+  Activity, Grid
 } from 'lucide-react';
 import './BlockMenu.css';
 
@@ -29,6 +30,8 @@ const BLOCK_OPTIONS: BlockMenuOption[] = [
   { type: 'callout',  icon: <AlertCircle size={16}/>,  label: 'Callout',   description: 'Highlighted callout',   keywords: ['callout','note','info','warning'] },
   { type: 'divider',  icon: <Minus size={16}/>,        label: 'Divider',   description: 'Horizontal rule',       keywords: ['divider','hr','---','separator'] },
   { type: 'database', icon: <TableIcon size={16}/>,    label: 'Database',  description: 'Structured collection', keywords: ['database','table','db','collection'] },
+  { type: 'mermaid' as any, icon: <Activity size={16}/>, label: 'Diagram',  description: 'Mermaid visualization',  keywords: ['mermaid','diagram','chart'] },
+  { type: 'table' as any, icon: <Grid size={16}/>,     label: 'Table',    description: 'Data table',            keywords: ['table','grid'] },
 ];
 
 export const BlockMenu: React.FC = () => {

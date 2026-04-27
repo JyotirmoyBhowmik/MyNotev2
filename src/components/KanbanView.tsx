@@ -1,5 +1,5 @@
 import { useGraphStore } from '../store/graphStore';
-import { Plus, MoreVertical } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import './KanbanView.css';
 
 interface KanbanViewProps {
@@ -7,7 +7,7 @@ interface KanbanViewProps {
 }
 
 export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
-  const { pages, blocks, addBlock } = useGraphStore();
+  const { pages, blocks, addBlock, updateBlock, deleteBlock } = useGraphStore();
   const page = pages[pageId];
   if (!page) return null;
 
@@ -20,6 +20,19 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
     }
   };
 
+  const handleEditColumn = async (colId: string, current: string) => {
+    const title = prompt('Rename Column:', current);
+    if (title !== null && title !== current) {
+      await updateBlock(colId, title);
+    }
+  };
+
+  const handleDeleteColumn = async (colId: string) => {
+    if (confirm('Delete this column and all its tasks?')) {
+      await deleteBlock(colId);
+    }
+  };
+
   const handleAddItem = async (columnId: string) => {
     const content = prompt('Task Name:');
     if (content) {
@@ -28,23 +41,29 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
     }
   };
 
+  const handleEditItem = async (itemId: string, current: string) => {
+    const content = prompt('Edit Task:', current);
+    if (content !== null && content !== current) {
+      await updateBlock(itemId, content);
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (confirm('Delete this task?')) {
+      await deleteBlock(itemId);
+    }
+  };
+
   return (
     <div className="kanban-container">
-      <div className="kanban-header">
-        <h1>{page.title}</h1>
-        <button className="kanban-add-col" onClick={handleAddColumn}>
-          <Plus size={16} /> Add Column
-        </button>
-      </div>
-
       <div className="kanban-board">
         {columns.map(col => (
           <div key={col.uuid} className="kanban-column">
             <div className="kanban-column-header">
-              <h3>{col.content}</h3>
-              <div className="flex gap-1">
-                <button onClick={() => handleAddItem(col.uuid)}><Plus size={14} /></button>
-                <button><MoreVertical size={14} /></button>
+              <h3 onClick={() => handleEditColumn(col.uuid, col.content)}>{col.content}</h3>
+              <div className="kanban-col-actions">
+                <button onClick={() => handleAddItem(col.uuid)} title="Add Task"><Plus size={14} /></button>
+                <button onClick={() => handleDeleteColumn(col.uuid)} title="Delete Column"><Trash2 size={14} /></button>
               </div>
             </div>
             
@@ -53,8 +72,14 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
                 const item = blocks[itemUuid];
                 if (!item) return null;
                 return (
-                  <div key={item.uuid} className="kanban-item">
-                    <div className="kanban-item-content">{item.content}</div>
+                  <div key={item.uuid} className="kanban-item group">
+                    <div className="kanban-item-content" onClick={() => handleEditItem(item.uuid, item.content)}>
+                      {item.content}
+                    </div>
+                    <div className="kanban-item-actions">
+                      <button onClick={() => handleEditItem(item.uuid, item.content)}><Edit2 size={12} /></button>
+                      <button onClick={() => handleDeleteItem(item.uuid)}><Trash2 size={12} /></button>
+                    </div>
                   </div>
                 );
               })}
@@ -64,6 +89,11 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
             </div>
           </div>
         ))}
+        
+        <div className="kanban-column add-column-placeholder" onClick={handleAddColumn}>
+          <Plus size={20} />
+          <span>Add Column</span>
+        </div>
       </div>
     </div>
   );

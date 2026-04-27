@@ -5,59 +5,64 @@ mermaid.initialize({
   startOnLoad: false,
   theme: 'dark',
   securityLevel: 'loose',
+  fontFamily: 'Inter, system-ui, sans-serif',
 });
 
 export const MermaidExtension = Node.create({
   name: 'mermaid',
   group: 'block',
-  content: 'text*',
-  marks: '',
-  code: true,
-  defining: true,
+  atom: true, // v3.3 - Make it an atom so it doesn't split or merge unexpectedly
 
   addAttributes() {
     return {
-      content: { default: 'graph TD\n  A --> B' },
+      code: { default: 'graph TD\n  A --> B' },
     };
   },
 
   parseHTML() {
-    return [{ tag: 'pre', getAttrs: (node) => (node as HTMLElement).classList.contains('mermaid') && null }];
+    return [{ tag: 'div[data-type="mermaid"]' }];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['pre', mergeAttributes(HTMLAttributes, { class: 'mermaid' }), 0];
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'mermaid' })];
   },
 
   addNodeView() {
     return ({ node, getPos, editor }) => {
-      const dom = document.createElement('div');
-      dom.className = 'mermaid-node-view';
+      const container = document.createElement('div');
+      container.className = 'mermaid-node-view';
       
       const preview = document.createElement('div');
       preview.className = 'mermaid-preview';
       
       const editorArea = document.createElement('textarea');
       editorArea.className = 'mermaid-editor';
-      editorArea.value = node.textContent || node.attrs.content;
+      editorArea.value = node.attrs.code;
       editorArea.style.display = 'none';
 
-      dom.appendChild(preview);
-      dom.appendChild(editorArea);
+      container.appendChild(preview);
+      container.appendChild(editorArea);
 
-      const render = async (code: string) => {
+      const renderDiagram = async (code: string) => {
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
         try {
+          // Clear any previous error messages that might have leaked
+          const existingError = document.getElementById('dmermaid-' + id);
+          if (existingError) existingError.remove();
+
           const { svg } = await mermaid.render(id, code);
           preview.innerHTML = svg;
         } catch (err) {
-          preview.innerHTML = `<pre class="mermaid-error">Invalid Mermaid Syntax</pre>`;
+          preview.innerHTML = `<div class="mermaid-error">Invalid Mermaid Syntax</div>`;
+          // Clean up mermaid's internal error UI if it leaked
+          console.warn('[Mermaid] Render failed:', err);
         }
       };
 
-      render(editorArea.value);
+      renderDiagram(node.attrs.code);
 
-      dom.addEventListener('click', () => {
+      container.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (editorArea.style.display === 'none') {
           editorArea.style.display = 'block';
           preview.style.display = 'none';
@@ -66,29 +71,39 @@ export const MermaidExtension = Node.create({
       });
 
       editorArea.addEventListener('blur', () => {
+        const newCode = editorArea.value;
         editorArea.style.display = 'none';
         preview.style.display = 'block';
-        const newContent = editorArea.value;
         
-        // Update node content
-        if (typeof getPos === 'function') {
-          const pos = getPos();
-          if (typeof pos === 'number') {
-            editor.commands.insertContentAt(pos, {
-              type: 'mermaid',
-              content: [{ type: 'text', text: newContent }]
-            });
+        if (newCode !== node.attrs.code) {
+          if (typeof getPos === 'function') {
+            editor.commands.updateAttributes('mermaid', { code: newCode });
           }
+          renderDiagram(newCode);
         }
-        render(newContent);
+      });
+
+      // Prevent Tiptap from handling enter/delete inside the textarea
+      editorArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') e.stopPropagation();
       });
 
       return {
-        dom,
+        dom: container,
         update: (updatedNode) => {
-          if (updatedNode.type !== node.type) return false;
+          if (updatedNode.type.name !== 'mermaid') return false;
+          if (updatedNode.attrs.code !== node.attrs.code) {
+            renderDiagram(updatedNode.attrs.code);
+            editorArea.value = updatedNode.attrs.code;
+          }
           return true;
         },
+        selectNode: () => {
+          container.classList.add('selected');
+        },
+        deselectNode: () => {
+          container.classList.remove('selected');
+        }
       };
     };
   },

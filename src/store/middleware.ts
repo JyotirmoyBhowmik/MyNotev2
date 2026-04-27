@@ -18,10 +18,10 @@ export const transactionMiddleware: TransactionMiddleware = (config) => (set, ge
       set(args);
       
       if (typeof args === 'function' || (args && typeof args === 'object')) {
-        set((s: any) => ({
+        set((s: T) => ({
           undoStack: [...(s.undoStack || []), prevState].slice(-50),
           redoStack: [],
-        }));
+        } as unknown as Partial<T>));
       }
     },
     get,

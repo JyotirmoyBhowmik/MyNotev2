@@ -5,7 +5,7 @@ import { useLinkStore } from './linkStore';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { transactionMiddleware } from './middleware';
-import type { BlockSchema } from '../lib/schemas';
+import { BlockSchema } from '../lib/schemas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -728,7 +728,7 @@ export const useGraphStore = create<GraphState>()(
         };
         
         // Zod Validation
-        const validated = BlockSchema.parse(newBlock);
+        BlockSchema.parse(newBlock);
         
         set(s => ({
           blocks: { ...s.blocks, [uuid]: newBlock },

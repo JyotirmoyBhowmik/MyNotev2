@@ -19,7 +19,6 @@ import {
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCursor } from '@tiptap/extension-collaboration-cursor'
 import * as Y from 'yjs'
-import { HocuspocusProvider } from '@hocuspocus/provider'
 import { BlockReference } from '../extensions/BlockReference'
 import { getRegisteredExtensions } from '../lib/pluginRegistry'
 import './NexusEditor.css'
@@ -89,7 +88,6 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
   const extensions = useMemo(() => [
     StarterKit.configure({
       codeBlock: false,
-      history: false, // Collaboration handles history
       heading: { levels: [1, 2, 3] },
     }),
     Placeholder.configure({

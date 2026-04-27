@@ -1,6 +1,6 @@
 import MermaidPlugin from '../plugins/mermaid';
 import KanbanPlugin from '../plugins/kanban';
-import { NexusPlugin } from '../types/plugin';
+import type { NexusPlugin } from '../types/plugin';
 
 export const NexusPluginRegistry: NexusPlugin[] = [
   MermaidPlugin,

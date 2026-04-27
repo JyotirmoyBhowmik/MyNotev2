@@ -213,7 +213,13 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
             <ToolbarBtn onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} active={false} title="Insert Table">
               <Grid size={14} />
             </ToolbarBtn>
-            <ToolbarBtn onClick={() => editor.chain().focus().insertContent({ type: 'mermaid', attrs: { code: 'graph TD\n  A --> B' } }).run()} active={false} title="Insert Diagram">
+            <ToolbarBtn onClick={() => editor.chain().focus().insertContent({ 
+              type: 'mermaid', 
+              attrs: { 
+                code: 'graph TD\n  A --> B',
+                uuid: `mermaid-${crypto.randomUUID()}`
+              } 
+            }).run()} active={false} title="Insert Diagram">
               <Activity size={14} />
             </ToolbarBtn>
           </div>

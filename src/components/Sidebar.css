@@ -242,3 +242,48 @@
   color: var(--text-3);
   text-transform: capitalize;
 }
+
+/* Trash Section */
+.sidebar-trash-item {
+  opacity: 0.6;
+  font-style: italic;
+}
+.sidebar-trash-item:hover {
+  opacity: 1;
+}
+.trash-actions {
+  display: none;
+  gap: 4px;
+  margin-left: auto;
+}
+.sidebar-item:hover .trash-actions {
+  display: flex;
+}
+.trash-btn {
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-3);
+  transition: all 0.15s;
+}
+.trash-btn:hover {
+  background: var(--active);
+  color: var(--text-1);
+}
+.trash-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.sidebar-backup-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: var(--text-2);
+  background: var(--hover);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  width: 100%;
+}
+.sidebar-backup-btn:hover { background: var(--active); color: var(--text-1); }

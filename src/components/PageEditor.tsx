@@ -9,13 +9,13 @@ import { JournalView } from './JournalView';
 import { TopBar } from './TopBar';
 import { TemplateModal } from './TemplateModal';
 import { NexusEditor } from './NexusEditor';
-import { Edit3, Star, Eye, PanelRight, BookMarked, Share2 } from 'lucide-react';
+import { Edit3, Star, Eye, PanelRight, BookMarked, Share2, Trash2, RotateCcw } from 'lucide-react';
 import { exportPageToMarkdown, downloadMarkdown } from '../hooks/useExport';
 import { ShareModal } from './ShareModal';
 import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {
-  const { activePageId, pages, blocks, loadGraph, loading, renamePage, favoritePage, updatePageIcon } = useGraphStore();
+  const { activePageId, pages, trash, blocks, loadGraph, loading, renamePage, favoritePage, updatePageIcon, restorePage, permanentlyDeletePage } = useGraphStore();
   const { setCommandPaletteOpen, rightSidebarOpen, toggleRightSidebar, viewMode, toggleViewMode, journalOpen, setJournalOpen } = useUIStore();
   const { backlinks } = useLinkStore();
 
@@ -95,7 +95,14 @@ export const PageEditor: React.FC = () => {
     );
   }
 
-  const page = pages[activePageId];
+  let page = pages[activePageId];
+  let isTrashed = false;
+  
+  if (!page) {
+    page = trash.pages[activePageId];
+    if (page) isTrashed = true;
+  }
+
   if (!page) return null;
 
   const pageBacklinks = backlinks[activePageId] || [];
@@ -131,9 +138,25 @@ export const PageEditor: React.FC = () => {
           splitView={splitView}
         />
 
+        {isTrashed && (
+          <div className="trash-banner">
+            <div className="trash-banner-text">
+              <Trash2 size={16} /> This page is in the trash
+            </div>
+            <div className="trash-banner-actions">
+              <button className="trash-banner-btn secondary" onClick={() => restorePage(activePageId)}>
+                <RotateCcw size={14} className="inline mr-1" /> Restore
+              </button>
+              <button className="trash-banner-btn primary" onClick={() => { if (confirm('Permanently delete this page?')) permanentlyDeletePage(activePageId); }}>
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Editor area - split or single */}
         <div className={`page-editor-body ${splitView ? 'split' : ''}`}>
-          <div className="page-editor">
+          <div className={`page-editor ${isTrashed ? 'trashed' : ''}`}>
             <div className="page-header">
               {/* Breadcrumbs */}
               <div className="page-breadcrumbs">
@@ -215,6 +238,7 @@ export const PageEditor: React.FC = () => {
               <NexusEditor 
                 pageId={activePageId} 
                 onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} 
+                readOnly={isTrashed}
               />
             </div>
           </div>

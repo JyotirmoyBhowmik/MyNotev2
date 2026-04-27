@@ -6,9 +6,10 @@ import { useDrag, useDrop } from 'react-dnd';
 import { 
   LogOut, FileText, Plus, Star, Calendar, Search, 
   ChevronRight, ChevronDown, Settings, Trash2, 
-  Edit3, HelpCircle, FolderPlus 
+  Edit3, HelpCircle, FolderPlus, RotateCcw, Download, Trash
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { exportBackup } from '../lib/backup';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -17,15 +18,15 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
-  const { 
-    pages, activePageId, setActivePage, createPage, createFolder,
-    deletePage, renamePage, createDailyPage, movePage
+    pages, trash, activePageId, setActivePage, createPage, createFolder,
+    deletePage, renamePage, createDailyPage, movePage,
+    restorePage, permanentlyDeletePage, emptyTrash
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
   const { setCommandPaletteOpen } = useUIStore();
 
   const [expandedSections, setExpandedSections] = useState({ 
-    favorites: true, pages: true, journal: true 
+    favorites: true, pages: true, journal: true, trash: false
   });
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
   const [contextPage, setContextPage] = useState<string | null>(null);
@@ -255,6 +256,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
           </div>
         )}
 
+        {/* Trash */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-title" onClick={() => toggleSection('trash')}>
+            {expandedSections.trash ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            <Trash2 size={12} /> Trash
+          </div>
+          {expandedSections.trash && Object.values(trash.pages).map(p => (
+            <div key={p.id} className="sidebar-item sidebar-trash-item">
+              <span className="sidebar-item-icon">{p.icon || '📄'}</span>
+              <span className="sidebar-item-label">{p.title}</span>
+              <div className="trash-actions">
+                <button className="trash-btn" title="Restore" onClick={() => restorePage(p.id)}>
+                  <RotateCcw size={12} />
+                </button>
+                <button className="trash-btn danger" title="Delete Forever" onClick={() => { if (confirm('Permanently delete this page?')) permanentlyDeletePage(p.id); }}>
+                  <Trash size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {expandedSections.trash && Object.keys(trash.pages).length === 0 && (
+            <div className="sidebar-empty">Trash is empty</div>
+          )}
+          {expandedSections.trash && Object.keys(trash.pages).length > 0 && (
+            <button className="sidebar-item text-red-500 text-[10px] uppercase font-bold" onClick={() => { if (confirm('Empty all items in trash?')) emptyTrash(); }}>
+              Empty Trash
+            </button>
+          )}
+        </div>
+
         {/* Features Guide */}
         <div className="sidebar-section">
           <div className="sidebar-section-title text-[10px] uppercase tracking-widest opacity-50 mt-4">
@@ -268,6 +299,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
 
       {/* Footer */}
       <div className="sidebar-footer">
+        <button className="sidebar-backup-btn" onClick={exportBackup}>
+          <Download size={14} /> Export Backup
+        </button>
         {isAdmin && (
           <button className="sidebar-admin-btn" onClick={onOpenAdmin}>
             <Settings size={14} /> Admin Panel

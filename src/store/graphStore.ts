@@ -25,6 +25,7 @@ export interface Block {
   created_at: number;
   updated_at: number;
   _local_ts?: number; 
+  deleted_at: number | null;
 }
 
 export interface Page {
@@ -39,6 +40,7 @@ export interface Page {
   icon: string | null;
   created_at: number;
   updated_at: number;
+  deleted_at: number | null;
 }
 
 interface GraphState {
@@ -48,7 +50,7 @@ interface GraphState {
   loading: boolean;
   nexusBlockCache: Record<string, string>; 
   saveLocks: Record<string, boolean>; 
-  pendingSaves: Record<string, string | null>; 
+  trash: { pages: Record<string, Page>; blocks: Record<string, Block> };
   setLoading: (loading: boolean) => void;
 
   // Core
@@ -64,6 +66,9 @@ interface GraphState {
   updatePageIcon: (id: string, icon: string) => Promise<void>;
   createDailyPage: () => Promise<Page>;
   movePage: (id: string, newParentId: string | null) => Promise<void>;
+  restorePage: (id: string) => Promise<void>;
+  permanentlyDeletePage: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
 
   // Blocks
   addBlock: (pageId: string, parentId: string | null, index: number, content?: string, type?: BlockType) => Promise<Block>;
@@ -91,6 +96,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   nexusBlockCache: {},
   saveLocks: {},
   pendingSaves: {},
+  trash: { pages: {}, blocks: {} },
   setLoading: (loading) => set({ loading }),
 
   loadGraph: async () => {
@@ -112,26 +118,40 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     if (cloudBlocks) console.log(`Loaded ${cloudBlocks.length} blocks`);
 
     const pages: Record<string, Page> = {};
+    const trashPages: Record<string, Page> = {};
     (cloudPages ?? []).forEach(p => {
-      pages[p.id] = {
+      const pageData = {
         ...p,
         root_blocks: p.root_blocks ?? [],
         tags: p.tags ?? [],
         is_favorite: p.is_favorite ?? false,
         parent_page_id: p.parent_page_id ?? null,
         icon: p.icon ?? null,
+        deleted_at: p.deleted_at ?? null,
       };
+      if (pageData.deleted_at) {
+        trashPages[p.id] = pageData;
+      } else {
+        pages[p.id] = pageData;
+      }
     });
 
     const blocks: Record<string, Block> = {};
+    const trashBlocks: Record<string, Block> = {};
     (cloudBlocks ?? []).forEach(b => {
-      blocks[b.uuid] = {
+      const blockData = {
         ...b,
         children: b.children ?? [],
         properties: b.properties ?? {},
         block_type: b.block_type ?? 'text',
         is_collapsed: b.is_collapsed ?? false,
+        deleted_at: b.deleted_at ?? null,
       };
+      if (blockData.deleted_at) {
+        trashBlocks[b.uuid] = blockData;
+      } else {
+        blocks[b.uuid] = blockData;
+      }
     });
 
     const nexusBlockCache: Record<string, string> = {};
@@ -141,7 +161,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       }
     });
 
-    set({ pages, blocks, nexusBlockCache, loading: false });
+    set({ pages, blocks, trash: { pages: trashPages, blocks: trashBlocks }, nexusBlockCache, loading: false });
     useLinkStore.getState().buildIndex(blocks, pages);
 
     // Realtime: Clean up existing subscription first to avoid "already subscribed" errors
@@ -220,7 +240,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       id: uuidv4(), user_id: user!.id, title, type,
       root_blocks: [], is_favorite: false,
       parent_page_id: parentId, tags: [], icon: type === 'folder' ? '📁' : null,
-      created_at: Date.now(), updated_at: Date.now(),
+      created_at: Date.now(), updated_at: Date.now(), deleted_at: null,
     };
     const { error } = await supabase.from('pages').insert(newPage);
     if (error) throw new Error(error.message);
@@ -233,14 +253,85 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   deletePage: async (id) => {
-    await supabase.from('pages').delete().eq('id', id);
+    const page = get().pages[id];
+    if (!page) return;
+    const now = Date.now();
+    await supabase.from('pages').update({ deleted_at: now }).eq('id', id);
+    
+    // Soft delete its blocks as well? Actually, just marking the page as deleted is enough to hide it.
+    // But for consistency and "empty trash", it's better to mark them.
+    // However, it's slow. Let's just mark the page.
+    
     set(s => {
       const pages = { ...s.pages };
+      const trashPages = { ...s.trash.pages };
+      const deletedPage = { ...pages[id], deleted_at: now };
       delete pages[id];
-      const blocks = { ...s.blocks };
-      Object.keys(blocks).forEach(k => { if (blocks[k].page_id === id) delete blocks[k]; });
-      return { pages, blocks, activePageId: s.activePageId === id ? null : s.activePageId };
+      trashPages[id] = deletedPage;
+      
+      return { 
+        pages, 
+        trash: { ...s.trash, pages: trashPages },
+        activePageId: s.activePageId === id ? null : s.activePageId 
+      };
     });
+  },
+
+  restorePage: async (id) => {
+    const page = get().trash.pages[id];
+    if (!page) return;
+    await supabase.from('pages').update({ deleted_at: null }).eq('id', id);
+    set(s => {
+      const trashPages = { ...s.trash.pages };
+      const pages = { ...s.pages };
+      const restoredPage = { ...trashPages[id], deleted_at: null };
+      delete trashPages[id];
+      pages[id] = restoredPage;
+      return { 
+        pages, 
+        trash: { ...s.trash, pages: trashPages } 
+      };
+    });
+  },
+
+  permanentlyDeletePage: async (id) => {
+    // True deletion of page AND its blocks
+    await supabase.from('blocks').delete().eq('page_id', id);
+    await supabase.from('pages').delete().eq('id', id);
+    
+    set(s => {
+      const pages = { ...s.pages };
+      const trashPages = { ...s.trash.pages };
+      delete pages[id];
+      delete trashPages[id];
+      const blocks = { ...s.blocks };
+      const trashBlocks = { ...s.trash.blocks };
+      Object.keys(blocks).forEach(k => { if (blocks[k].page_id === id) delete blocks[k]; });
+      Object.keys(trashBlocks).forEach(k => { if (trashBlocks[k].page_id === id) delete trashBlocks[k]; });
+      return { 
+        pages, 
+        trash: { pages: trashPages, blocks: trashBlocks },
+        blocks,
+        activePageId: s.activePageId === id ? null : s.activePageId 
+      };
+    });
+  },
+
+  emptyTrash: async () => {
+    const { trash } = get();
+    const pageIds = Object.keys(trash.pages);
+    const blockIds = Object.keys(trash.blocks);
+    
+    // Also delete blocks belonging to the pages being deleted
+    if (pageIds.length > 0) {
+      await supabase.from('blocks').delete().in('page_id', pageIds);
+      await supabase.from('pages').delete().in('id', pageIds);
+    }
+    if (blockIds.length > 0) {
+      await supabase.from('blocks').delete().in('uuid', blockIds);
+    }
+    
+    set(s => ({ trash: { pages: {}, blocks: {} } }));
   },
 
   renamePage: async (id, title) => {
@@ -289,7 +380,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       uuid: uuidv4(), user_id: user!.id, page_id: pageId,
       parent_id: parentId, content, children: [],
       properties: {}, block_type: type, is_collapsed: false,
-      created_at: Date.now(), updated_at: Date.now(),
+      created_at: Date.now(), updated_at: Date.now(), deleted_at: null,
     };
 
     const { error } = await supabase.from('blocks').insert(newBlock);
@@ -339,39 +430,46 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   deleteBlock: async (uuid) => {
-    const { blocks, activePageId } = get();
+    const { blocks } = get();
     const block = blocks[uuid];
     if (!block) return;
 
-    const idsToDelete: string[] = [];
+    const idsToSoftDelete: string[] = [];
     const collect = (id: string) => {
       const b = blocks[id];
       if (!b) return;
       b.children.forEach(collect);
-      idsToDelete.push(id);
+      idsToSoftDelete.push(id);
     };
     collect(uuid);
 
-    await supabase.from('blocks').delete().in('uuid', idsToDelete);
-
-    if (block.parent_id && blocks[block.parent_id]) {
-      const parent = blocks[block.parent_id];
-      const updatedChildren = parent.children.filter(c => c !== uuid);
-      await supabase.from('blocks').update({ children: updatedChildren }).eq('uuid', block.parent_id);
-      set(s => ({ blocks: { ...s.blocks, [block.parent_id!]: { ...parent, children: updatedChildren } } }));
-    } else if (activePageId) {
-      const page = get().pages[activePageId];
-      if (page) {
-        const updatedRootBlocks = page.root_blocks.filter(c => c !== uuid);
-        await supabase.from('pages').update({ root_blocks: updatedRootBlocks }).eq('id', activePageId);
-        set(s => ({ pages: { ...s.pages, [activePageId]: { ...page, root_blocks: updatedRootBlocks } } }));
-      }
-    }
+    const now = Date.now();
+    await supabase.from('blocks').update({ deleted_at: now }).in('uuid', idsToSoftDelete);
 
     set(s => {
       const nextBlocks = { ...s.blocks };
-      idsToDelete.forEach(id => delete nextBlocks[id]);
-      return { blocks: nextBlocks };
+      const nextTrashBlocks = { ...s.trash.blocks };
+      
+      idsToSoftDelete.forEach(id => {
+        nextTrashBlocks[id] = { ...nextBlocks[id], deleted_at: now };
+        delete nextBlocks[id];
+      });
+
+      // Update parent's children array if it's not the page root
+      if (block.parent_id && nextBlocks[block.parent_id]) {
+        nextBlocks[block.parent_id].children = nextBlocks[block.parent_id].children.filter(c => c !== uuid);
+      } else if (s.activePageId && s.pages[s.activePageId]) {
+        // It's a root block
+        const page = { ...s.pages[s.activePageId] };
+        page.root_blocks = page.root_blocks.filter(c => c !== uuid);
+        return { 
+          blocks: nextBlocks, 
+          trash: { ...s.trash, blocks: nextTrashBlocks },
+          pages: { ...s.pages, [s.activePageId]: page }
+        };
+      }
+
+      return { blocks: nextBlocks, trash: { ...s.trash, blocks: nextTrashBlocks } };
     });
   },
 
@@ -581,7 +679,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
           uuid, page_id: pageId, user_id: userId, parent_id: null,
           content: html, block_type: 'nexus_html', is_collapsed: false,
           children: [], properties: {}, created_at: now, updated_at: now,
-          _local_ts: now,
+          deleted_at: null, _local_ts: now,
         };
         
         // Strip _local_ts before sending to Supabase

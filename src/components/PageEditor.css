@@ -233,3 +233,57 @@
   background: var(--sidebar-bg);
   animation: slideIn 0.15s ease;
 }
+
+/* Trash Banner */
+.trash-banner {
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  padding: 10px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 10;
+}
+.trash-banner-text {
+  font-size: 0.85rem;
+  color: #991b1b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trash-banner-actions {
+  display: flex;
+  gap: 8px;
+}
+.trash-banner-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.trash-banner-btn.primary {
+  background: #dc2626;
+  color: white;
+}
+.trash-banner-btn.primary:hover {
+  background: #b91c1c;
+}
+.trash-banner-btn.secondary {
+  background: white;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.trash-banner-btn.secondary:hover {
+  background: #fef2f2;
+}
+
+.page-editor.trashed {
+  opacity: 0.7;
+  pointer-events: none;
+}
+.page-editor.trashed .page-title:hover {
+  border-bottom-color: transparent;
+}

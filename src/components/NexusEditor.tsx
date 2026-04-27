@@ -93,11 +93,11 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     Typography,
     BlockReference,
     Image.configure({ inline: false, allowBase64: false }),
-    Link.configure({ 
-      openOnClick: true, 
-      HTMLAttributes: { class: 'tiptap-link' },
-      validate: href => /^https?:\/\//.test(href),
-    }),
+    // Link.configure({ 
+    //   openOnClick: true, 
+    //   HTMLAttributes: { class: 'tiptap-link' },
+    //   validate: href => /^https?:\/\//.test(href),
+    // }),
     TaskList,
     TaskItem.configure({ nested: true }),
     Table.configure({ resizable: true }),

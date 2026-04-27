@@ -105,7 +105,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   loadGraph: async () => {
     if (get().loading && Object.keys(get().pages).length > 0) return; // Already loading
     
-    console.log('[GraphStore] loadGraph v2.2 init');
+    console.log('[GraphStore] loadGraph v2.4 init (sort_order removed)');
     const user = useAuthStore.getState().user;
     if (!user) return;
     set({ loading: true });

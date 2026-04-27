@@ -7,16 +7,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#0a0a0f",
-        "bg-2": "#111118",
-        "bg-3": "#16161f",
-        accent: "#5b8af5",
-        purple: "#8b5cf6",
-        green: "#34d399",
-        red: "#f87171",
-        orange: "#fb923c",
-        yellow: "#fbbf24",
+        obsidian: {
+          bg: "#0a0a0f",
+          surface: "#12121a",
+        },
+        electric: {
+          blue: "#5b8af5",
+        },
+        glass: {
+          border: "rgba(255, 255, 255, 0.06)",
+        },
+        text: {
+          primary: "#f0f0f5",
+          secondary: "#94a3b8",
+        }
       },
+      backdropBlur: {
+        xs: '2px',
+      }
     },
   },
   plugins: [],

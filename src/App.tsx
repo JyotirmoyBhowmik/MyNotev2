@@ -4,6 +4,8 @@ import { Login } from './components/Login';
 import { Layout } from './components/Layout';
 import { PendingApproval } from './components/PendingApproval';
 import { AdminPanel } from './components/AdminPanel';
+import { NexusEditor } from './components/NexusEditor';
+import { useGraphStore } from './store/graphStore';
 
 // ─── Clear stale auth error hashes from the URL ──────────────────────────────
 // e.g. #error=access_denied&error_code=otp_expired from expired magic links.
@@ -71,8 +73,18 @@ function App() {
     return <AdminPanel onClose={() => setShowAdmin(false)} />;
   }
 
+  const activePageId = useGraphStore(s => s.activePageId);
+
   return (
-    <Layout onOpenAdmin={() => setShowAdmin(true)} isAdmin={profile.role === 'admin'} />
+    <Layout>
+      {activePageId ? (
+        <NexusEditor pageId={activePageId} />
+      ) : (
+        <div className="flex h-full items-center justify-center text-[var(--text-secondary)] italic">
+          Select a page to start creating
+        </div>
+      )}
+    </Layout>
   );
 }
 

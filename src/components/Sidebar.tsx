@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
         tree.root.push(p);
       }
     });
-    // Sort tree children by sort_order just in case (already sorted via allPages)
+
     return tree;
   }, [allPages]);
 

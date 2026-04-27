@@ -41,7 +41,7 @@ export interface Page {
   created_at: number;
   updated_at: number;
   deleted_at: number | null;
-  sort_order?: number;
+
 }
 
 interface GraphState {
@@ -131,7 +131,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         parent_page_id: p.parent_page_id ?? null,
         icon: p.icon ?? null,
         deleted_at: p.deleted_at ?? null,
-        sort_order: p.sort_order ?? 0,
+
       };
       if (pageData.deleted_at) {
         trashPages[p.id] = pageData;

@@ -32,7 +32,7 @@ export interface Page {
   id: string;
   user_id: string;
   title: string;
-  type: 'normal' | 'journal' | 'folder';
+  type: 'normal' | 'journal' | 'folder' | 'kanban';
   root_blocks: string[];
   is_favorite: boolean;
   parent_page_id: string | null;

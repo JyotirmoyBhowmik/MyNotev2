@@ -12,6 +12,7 @@ import { NexusEditor } from './NexusEditor';
 import { Edit3, Star, Eye, PanelRight, BookMarked, Share2, Trash2, RotateCcw } from 'lucide-react';
 import { exportPageToMarkdown, downloadMarkdown } from '../hooks/useExport';
 import { ShareModal } from './ShareModal';
+import { KanbanView } from './KanbanView';
 import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {

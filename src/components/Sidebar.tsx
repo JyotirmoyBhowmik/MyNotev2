@@ -6,7 +6,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { 
   LogOut, FileText, Plus, Star, Calendar, Search, 
   ChevronRight, ChevronDown, Settings, Trash2, 
-  Edit3, HelpCircle, FolderPlus, RotateCcw, Download, Trash
+  Edit3, HelpCircle, FolderPlus, RotateCcw, Download, Trash, Layout
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { exportBackup } from '../lib/backup';
@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
   const { 
     pages, trash, activePageId, setActivePage, createPage, createFolder,
     deletePage, renamePage, createDailyPage, movePage,
-    restorePage, permanentlyDeletePage, emptyTrash, reorderPage
+    restorePage, permanentlyDeletePage, emptyTrash, reorderPage, addBlock
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
   const { setCommandPaletteOpen } = useUIStore();
@@ -76,6 +76,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
     if (title) {
       const page = await createFolder(title, parentId);
       setActivePage(page.id);
+      if (parentId) setExpandedPages(prev => ({ ...prev, [parentId]: true }));
+    }
+  };
+
+  const handleNewKanban = async (parentId: string | null = null) => {
+    const title = prompt('Kanban Board Name:');
+    if (title) {
+      const page = await createPage(title, 'kanban', parentId);
+      setActivePage(page.id);
+      // Create default columns
+      await addBlock(page.id, null, 0, 'To Do', 'text');
+      await addBlock(page.id, null, 1, 'In Progress', 'text');
+      await addBlock(page.id, null, 2, 'Done', 'text');
       if (parentId) setExpandedPages(prev => ({ ...prev, [parentId]: true }));
     }
   };
@@ -183,6 +196,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenAdmin, isAdmin }) => {
               </button>
               <button onClick={() => handleNewFolder(page.id)}>
                 <FolderPlus size={12} /> New Folder
+              </button>
+              <button onClick={() => handleNewKanban(page.id)}>
+                <Layout size={12} /> New Kanban
               </button>
               <button onClick={() => { setRenaming(page.id); setRenameDraft(page.title); setContextPage(null); }}>
                 <Edit3 size={12} /> Rename

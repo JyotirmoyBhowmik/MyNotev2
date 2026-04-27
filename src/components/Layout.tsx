@@ -62,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
 
       {/* Center Panel (Creative Canvas) */}
       <main 
-        className="relative flex-1 overflow-y-auto scroll-smooth focus:outline-none"
+        className="relative flex-1 min-w-0 overflow-y-auto scroll-smooth focus:outline-none"
         style={{ scrollSnapType: 'y proximity' }}
       >
         <div className="mx-auto h-full w-full max-w-[1024px] px-6 py-12 md:px-12">

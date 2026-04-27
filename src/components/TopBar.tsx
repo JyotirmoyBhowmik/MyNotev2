@@ -16,7 +16,7 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView }) => {
-  const { pages, activePageId, setActivePage } = useGraphStore();
+  const { pages, activePageId, setActivePage, isSyncing } = useGraphStore();
   const { 
     setCommandPaletteOpen, 
     setJournalOpen, 
@@ -173,6 +173,21 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
             </button>
           </React.Fragment>
         ))}
+      </div>
+
+      {/* Sync Status */}
+      <div className="flex items-center gap-2 px-3 text-[10px] font-bold uppercase tracking-widest transition-opacity duration-300">
+        {isSyncing ? (
+          <div className="flex items-center gap-1.5 text-[var(--electric-blue)]">
+            <div className="h-1.5 w-1.5 rounded-full bg-[var(--electric-blue)] animate-pulse" />
+            Saving...
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-green-500/50">
+            <div className="h-1.5 w-1.5 rounded-full bg-green-500/50" />
+            Synced
+          </div>
+        )}
       </div>
 
       {/* Upload progress */}

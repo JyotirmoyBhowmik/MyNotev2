@@ -220,7 +220,7 @@
 }
 
 .page-editor-content-area.preview-only {
-  pointer-events: none;
+  user-select: text;
 }
 
 /* Right Sidebar */

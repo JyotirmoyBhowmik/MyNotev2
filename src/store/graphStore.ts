@@ -203,7 +203,13 @@ export const useGraphStore = create<GraphState>()(
     });
 
     const currentActive = get().activePageId;
-    const nextActive = currentActive && pages[currentActive] ? currentActive : (Object.keys(pages)[0] || null);
+    let nextActive = currentActive;
+    
+    // Ensure the active page actually exists in the new pages set and isn't just a folder
+    if (!currentActive || !pages[currentActive] || pages[currentActive].type === 'folder') {
+      const firstValidPage = Object.values(pages).find(p => p.type !== 'folder');
+      nextActive = firstValidPage?.id || (Object.keys(pages)[0] || null);
+    }
 
     set({ 
       pages, blocks, 

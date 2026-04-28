@@ -51,9 +51,14 @@ function App() {
   }, []); 
 
   useEffect(() => {
+    let timeout: any;
     if (user?.id && profile?.is_approved) {
-      loadGraph();
+      // Debounce the load to prevent race conditions during auth state transitions
+      timeout = setTimeout(() => {
+        loadGraph();
+      }, 500);
     }
+    return () => clearTimeout(timeout);
   }, [user?.id, profile?.is_approved, loadGraph]);
 
   // Safety check for activePageId

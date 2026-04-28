@@ -48,8 +48,10 @@ export const PasswordReset: React.FC = () => {
         {!success && (
           <form onSubmit={handleReset} className="login-form">
             <div className="login-field">
-              <label className="login-label">New Password</label>
+              <label className="login-label" htmlFor="new-password">New Password</label>
               <input
+                id="new-password"
+                name="new-password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -61,8 +63,10 @@ export const PasswordReset: React.FC = () => {
               />
             </div>
             <div className="login-field">
-              <label className="login-label">Confirm Password</label>
+              <label className="login-label" htmlFor="confirm-password">Confirm Password</label>
               <input
+                id="confirm-password"
+                name="confirm-password"
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}

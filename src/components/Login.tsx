@@ -73,9 +73,10 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleAuth} className="login-form">
           <div className="login-field">
-            <label className="login-label">Email</label>
+            <label className="login-label" htmlFor="login-email">Email</label>
             <input
               id="login-email"
+              name="email"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -86,9 +87,10 @@ export const Login: React.FC = () => {
             />
           </div>
           <div className="login-field">
-            <label className="login-label">Password</label>
+            <label className="login-label" htmlFor="login-password">Password</label>
             <input
               id="login-password"
+              name="password"
               type="password"
               placeholder="••••••••"
               value={password}

@@ -13,6 +13,7 @@ import { PageContextMenu } from './components/PageContextMenu';
 import { GraphView } from './components/GraphView';
 import { TrashView } from './components/TrashView';
 import { JournalView } from './components/JournalView';
+import { TasksView } from './components/TasksView';
 import { useUIStore } from './store/uiStore';
 import { useGraphStore } from './store/graphStore';
 import { NexusErrorBoundary } from './components/NexusErrorBoundary';
@@ -137,6 +138,8 @@ function App() {
           <TrashView />
         ) : journalOpen ? (
           <JournalView onClose={() => useUIStore.getState().setJournalOpen(false)} />
+        ) : tasksOpen ? (
+          <TasksView />
         ) : activePageId ? (
           <PageEditor />
         ) : (

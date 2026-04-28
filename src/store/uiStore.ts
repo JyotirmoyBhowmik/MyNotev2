@@ -19,7 +19,10 @@ interface UIState {
   collapsedBlocks: Record<string, boolean>;
   tasksOpen: boolean;
   journalOpen: boolean;
+  graphOpen: boolean;
+  trashOpen: boolean;
   viewMode: 'canvas' | 'list';
+  pageContextMenu: { x: number; y: number; pageId: string } | null;
 
   // Actions
   setSidebarWidth: (width: number) => void;
@@ -35,6 +38,9 @@ interface UIState {
   
   setJournalOpen: (open: boolean) => void;
   setTasksOpen: (open: boolean) => void;
+  setGraphOpen: (open: boolean) => void;
+  setTrashOpen: (open: boolean) => void;
+  setPageContextMenu: (menu: { x: number; y: number; pageId: string } | null) => void;
   toggleViewMode: () => void;
   toggleCollapsed: (blockId: string) => void;
 
@@ -60,8 +66,11 @@ export const useUIStore = create<UIState>()(
       
       journalOpen: false,
       tasksOpen: false,
+      graphOpen: false,
+      trashOpen: false,
       viewMode: 'canvas',
       collapsedBlocks: {},
+      pageContextMenu: null,
 
       // Actions
       setSidebarWidth: (width) => set({ sidebarWidth: width }),
@@ -75,8 +84,11 @@ export const useUIStore = create<UIState>()(
       setSlashQuery: (query) => set({ slashQuery: query }),
       setContextMenu: (menu) => set({ contextMenu: menu }),
       
-      setJournalOpen: (open) => set({ journalOpen: open, tasksOpen: false }),
-      setTasksOpen: (open) => set({ tasksOpen: open, journalOpen: false }),
+      setJournalOpen: (open) => set({ journalOpen: open, tasksOpen: false, graphOpen: false, trashOpen: false }),
+      setTasksOpen: (open) => set({ tasksOpen: open, journalOpen: false, graphOpen: false, trashOpen: false }),
+      setGraphOpen: (open) => set({ graphOpen: open, tasksOpen: false, journalOpen: false, trashOpen: false }),
+      setTrashOpen: (open) => set({ trashOpen: open, graphOpen: false, tasksOpen: false, journalOpen: false }),
+      setPageContextMenu: (menu) => set({ pageContextMenu: menu }),
       toggleViewMode: () => set((s) => ({ viewMode: s.viewMode === 'canvas' ? 'list' : 'canvas' })),
       toggleCollapsed: (blockId) => set((s) => ({
         collapsedBlocks: { ...s.collapsedBlocks, [blockId]: !s.collapsedBlocks[blockId] }

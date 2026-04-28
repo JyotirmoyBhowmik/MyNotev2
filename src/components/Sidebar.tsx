@@ -2,7 +2,8 @@ import React, { useState, useMemo, useCallback, useRef, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { 
   FileText, Plus, Calendar, Search, 
-  ChevronRight, ChevronDown, LogOut, Command, CheckCircle
+  ChevronRight, ChevronDown, LogOut, Command, CheckCircle,
+  Share2, Trash2, Network
 } from 'lucide-react';
 import { useGraphStore, type Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
@@ -22,7 +23,11 @@ export const Sidebar: React.FC = memo(() => {
     pages, activePageId, setActivePage, createPage 
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
-  const { isFocusMode, setFocusMode, setJournalOpen, setCommandPaletteOpen, setTasksOpen } = useUIStore();
+  const { 
+    isFocusMode, setFocusMode, setJournalOpen, 
+    setCommandPaletteOpen, setTasksOpen, setGraphOpen,
+    setTrashOpen, setPageContextMenu 
+  } = useUIStore();
   
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
   const parentRef = useRef<HTMLDivElement>(null);
@@ -110,6 +115,18 @@ export const Sidebar: React.FC = memo(() => {
         >
           <CheckCircle size={14} /> Tasks
         </button>
+        <button 
+          className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]"
+          onClick={() => setGraphOpen(true)}
+        >
+          <Network size={14} /> Graph
+        </button>
+        <button 
+          className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]"
+          onClick={() => setTrashOpen(true)}
+        >
+          <Trash2 size={14} /> Trash
+        </button>
       </div>
 
       {/* Page Tree (Virtualized) */}
@@ -148,7 +165,17 @@ export const Sidebar: React.FC = memo(() => {
                     ? "bg-white/10 text-white border-[var(--electric-blue)]" 
                     : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-white border-transparent hover:border-[var(--electric-blue)]"
                 )}
-                onClick={() => setActivePage(node.id)}
+                onClick={() => {
+                  setActivePage(node.id);
+                  setJournalOpen(false);
+                  setGraphOpen(false);
+                  setTrashOpen(false);
+                  setTasksOpen(false);
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setPageContextMenu({ x: e.clientX, y: e.clientY, pageId: node.id });
+                }}
               >
                 <div 
                   onClick={(e) => toggleExpand(node.id, e)}

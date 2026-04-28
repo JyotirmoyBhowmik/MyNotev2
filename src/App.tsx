@@ -6,9 +6,12 @@ import { PendingApproval } from './components/PendingApproval';
 import { AdminPanel } from './components/AdminPanel';
 import { PasswordReset } from './components/PasswordReset';
 import { PageEditor } from './components/PageEditor';
-import { CommandPalette } from './components/CommandPalette';
-import { BlockMenu } from './components/BlockMenu';
 import { ContextMenu } from './components/ContextMenu';
+import { PageContextMenu } from './components/PageContextMenu';
+import { GraphView } from './components/GraphView';
+import { TrashView } from './components/TrashView';
+import { JournalView } from './components/JournalView';
+import { useUIStore } from './store/uiStore';
 import { useGraphStore } from './store/graphStore';
 import { Toaster } from 'sonner';
 
@@ -27,6 +30,12 @@ function clearAuthErrorFromUrl() {
 function App() {
   const { user, profile, loading, initAuth, isRecovering } = useAuthStore();
   const activePageId = useGraphStore(s => s.activePageId);
+  const { 
+    graphOpen, setGraphOpen, 
+    trashOpen, setTrashOpen,
+    journalOpen, setTasksOpen,
+    setCommandPaletteOpen 
+  } = useUIStore();
   const [showAdmin, setShowAdmin] = useState(false);
 
   const { loadGraph } = useGraphStore();
@@ -52,6 +61,19 @@ function App() {
       // Wait for loadGraph to finish before clearing
     }
   }, [activePageId, loading]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl+P for Command Palette
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [setCommandPaletteOpen]);
 
   if (loading) {
     return (
@@ -102,7 +124,11 @@ function App() {
   return (
     <div className="h-screen w-screen overflow-hidden">
       <Layout>
-        {activePageId ? (
+        {trashOpen ? (
+          <TrashView />
+        ) : journalOpen ? (
+          <JournalView />
+        ) : activePageId ? (
           <PageEditor />
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-[var(--text-secondary)] italic bg-[var(--obsidian-bg)] p-8 text-center">
@@ -111,15 +137,27 @@ function App() {
             <p className="max-w-md mb-8 text-sm opacity-60">Your advanced neural workspace is ready. Select a page from the sidebar or use the quick actions below to begin.</p>
             
             <div className="grid grid-cols-2 gap-4 max-w-lg w-full not-italic">
-              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+              <div 
+                onClick={() => setCommandPaletteOpen(true)}
+                className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all cursor-pointer"
+              >
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Navigation</span>
                 <span className="text-xs text-[var(--text-primary)]">Press <kbd className="bg-white/10 px-1 rounded">Ctrl+P</kbd> to search or jump to any page.</span>
               </div>
-              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+              <div 
+                onClick={() => {
+                  const p = useGraphStore.getState().createPage('New Page');
+                  p.then(page => useGraphStore.getState().setActivePage(page.id));
+                }}
+                className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all cursor-pointer"
+              >
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Creation</span>
                 <span className="text-xs text-[var(--text-primary)]">Type <kbd className="bg-white/10 px-1 rounded">/</kbd> inside any document for advanced blocks.</span>
               </div>
-              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+              <div 
+                onClick={() => useUIStore.getState().toggleInspector()}
+                className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all cursor-pointer"
+              >
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Intelligence</span>
                 <span className="text-xs text-[var(--text-primary)]">Use backlinks in the right panel to see neural connections.</span>
               </div>
@@ -136,6 +174,8 @@ function App() {
       <CommandPalette onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />
       <BlockMenu />
       <ContextMenu />
+      <PageContextMenu />
+      {graphOpen && <GraphView onClose={() => setGraphOpen(false)} activePageId={activePageId || ''} />}
       <Toaster position="bottom-right" theme="dark" expand={false} richColors />
     </div>
   );

@@ -11,6 +11,7 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { useState, useCallback, useEffect, useRef, memo, useMemo } from 'react'
 import { useGraphStore } from '../store/graphStore'
+import { useUIStore } from '../store/uiStore'
 import {
   Bold, Italic, Code, Strikethrough, Link2, List, ListOrdered,
   Heading1, Heading2, Heading3, CheckSquare, Quote, Minus, Undo, Redo,

@@ -4,7 +4,7 @@ import { useUIStore } from '../store/uiStore';
 import { useResizable } from '../hooks/useResizable';
 import { Sidebar } from './Sidebar';
 import { Inspector } from './Inspector';
-import { TaskAggregator } from './TaskAggregator';
+import { TasksView } from './TasksView';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -80,7 +80,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="h-full w-96 min-w-[350px] flex-shrink-0 border-l border-[var(--glass-border)] glass-blur overflow-hidden relative z-40"
           >
-            <TaskAggregator />
+            <TasksView />
           </motion.aside>
         )}
         {isInspectorOpen && !tasksOpen && !isFocusMode && (

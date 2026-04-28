@@ -8,7 +8,7 @@ interface KanbanViewProps {
   pageId: string;
 }
 
-export const KanbanView: React.FC<KanbanViewProps> = ({ pageId }) => {
+export const PageKanban: React.FC<KanbanViewProps> = ({ pageId }) => {
   const { pages, blocks, addBlock } = useGraphStore();
   const page = pages[pageId];
   if (!page) return null;

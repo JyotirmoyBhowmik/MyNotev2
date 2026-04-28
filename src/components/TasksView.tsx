@@ -4,7 +4,7 @@ import { useUIStore } from '../store/uiStore';
 import { CheckCircle2, Circle, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-export const TaskAggregator: React.FC = () => {
+export const TasksView: React.FC = () => {
   const { blocks, pages, setActivePage } = useGraphStore();
   const { setTasksOpen } = useUIStore();
 

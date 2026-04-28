@@ -10,7 +10,7 @@ interface KanbanViewProps {
   onPropertyChange?: (recordId: string, propId: string, value: any) => void;
 }
 
-export const KanbanView: React.FC<KanbanViewProps> = ({ 
+export const DatabaseKanban: React.FC<KanbanViewProps> = ({ 
   records, 
   schema, 
   onAddRecord,

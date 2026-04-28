@@ -10,7 +10,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { KanbanView } from './KanbanView';
+import { DatabaseKanban as KanbanView } from './DatabaseKanban';
 import './DatabaseView.css';
 
 interface DatabaseViewProps {

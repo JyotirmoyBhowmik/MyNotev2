@@ -2,7 +2,7 @@ import React from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { Plus, Trash2 } from 'lucide-react';
 import { useDrag, useDrop } from 'react-dnd';
-import './KanbanView.css';
+import './PageKanban.css';
 
 interface KanbanViewProps {
   pageId: string;

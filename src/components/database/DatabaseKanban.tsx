@@ -1,7 +1,7 @@
 import React from 'react';
 import { type Block } from '../../store/graphStore';
 import { Plus, MoreHorizontal } from 'lucide-react';
-import './KanbanView.css';
+import './DatabaseKanban.css';
 
 interface KanbanViewProps {
   records: Block[];

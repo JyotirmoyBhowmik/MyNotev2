@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useUIStore } from '../store/uiStore';
 import { useGraphStore } from '../store/graphStore';
-import { Trash2, Edit3, Star, Copy, ExternalLink, Hash } from 'lucide-react';
+import { Trash2, Edit3, Star } from 'lucide-react';
 import './ContextMenu.css';
 
 export const PageContextMenu: React.FC = () => {

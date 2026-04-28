@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { 
   FileText, Plus, Calendar, Search, 
   ChevronRight, ChevronDown, LogOut, Command, CheckCircle,
-  Share2, Trash2, Network
+  Trash2, Network
 } from 'lucide-react';
 import { useGraphStore, type Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';

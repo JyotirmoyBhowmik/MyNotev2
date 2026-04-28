@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
-import { CheckCircle2, Circle, Clock, Tag, ChevronRight, Filter, Search, Calendar } from 'lucide-react';
+import { CheckCircle2, Circle, Tag, ChevronRight, Search, Calendar } from 'lucide-react';
 import './TasksView.css';
 
 export const TasksView: React.FC = () => {

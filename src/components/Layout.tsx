@@ -4,7 +4,6 @@ import { useUIStore } from '../store/uiStore';
 import { useResizable } from '../hooks/useResizable';
 import { Sidebar } from './Sidebar';
 import { Inspector } from './Inspector';
-import { TasksView } from './TasksView';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,8 +16,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
     isFocusMode, 
     sidebarWidth, 
     setSidebarWidth,
-    toggleInspector,
-    tasksOpen 
+    toggleInspector
   } = useUIStore();
 
   const { width, startResizing } = useResizable({

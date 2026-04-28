@@ -18,6 +18,8 @@ interface UIState {
   // State
   collapsedBlocks: Record<string, boolean>;
   tasksOpen: boolean;
+  journalOpen: boolean;
+  viewMode: 'canvas' | 'list';
 
   // Actions
   setSidebarWidth: (width: number) => void;
@@ -91,6 +93,7 @@ export const useUIStore = create<UIState>()(
         isSidebarOpen: state.isSidebarOpen,
         isInspectorOpen: state.isInspectorOpen,
         viewMode: state.viewMode,
+        journalOpen: state.journalOpen,
         collapsedBlocks: state.collapsedBlocks
       }),
     }

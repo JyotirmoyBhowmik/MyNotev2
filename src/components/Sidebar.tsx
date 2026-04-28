@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { 
-  FileText, Plus, Star, Calendar, Search, 
+  FileText, Plus, Calendar, Search, 
   ChevronRight, ChevronDown, LogOut, Command, CheckCircle
 } from 'lucide-react';
 import { useGraphStore, type Page } from '../store/graphStore';

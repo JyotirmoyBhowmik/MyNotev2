@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
-import { CheckCircle2, Circle, Clock, ArrowRight, ExternalLink, Filter } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export const TaskAggregator: React.FC = () => {
-  const { blocks, pages, setActivePage, updateBlock } = useGraphStore();
+  const { blocks, pages, setActivePage } = useGraphStore();
   const { setTasksOpen } = useUIStore();
 
   // Aggregate all tasks (Kanban items and checklist items)

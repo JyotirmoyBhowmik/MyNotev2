@@ -29,12 +29,20 @@ function App() {
   const activePageId = useGraphStore(s => s.activePageId);
   const [showAdmin, setShowAdmin] = useState(false);
 
+  const { loadGraph } = useGraphStore();
+
   useEffect(() => {
     // 1. Clear any stale magic-link fragments BEFORE initialising auth
     clearAuthErrorFromUrl();
     // 2. Init auth (reads session cookie, subscribes to auth state changes)
     initAuth();
-  }, []);   // ← intentionally empty; initAuth is stable
+  }, []); 
+
+  useEffect(() => {
+    if (user && profile?.is_approved) {
+      loadGraph();
+    }
+  }, [user, profile, loadGraph]);
 
   if (loading) {
     return (
@@ -88,9 +96,29 @@ function App() {
         {activePageId ? (
           <PageEditor />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center text-[var(--text-secondary)] italic bg-[var(--obsidian-bg)]">
-            <div className="mb-4 text-4xl opacity-20">🧠</div>
-            Select a page or create a new one to start
+          <div className="flex h-full flex-col items-center justify-center text-[var(--text-secondary)] italic bg-[var(--obsidian-bg)] p-8 text-center">
+            <div className="mb-6 text-6xl opacity-20 animate-pulse">🧠</div>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] not-italic mb-2">Welcome to Nexus v3.15</h2>
+            <p className="max-w-md mb-8 text-sm opacity-60">Your advanced neural workspace is ready. Select a page from the sidebar or use the quick actions below to begin.</p>
+            
+            <div className="grid grid-cols-2 gap-4 max-w-lg w-full not-italic">
+              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Navigation</span>
+                <span className="text-xs text-[var(--text-primary)]">Press <kbd className="bg-white/10 px-1 rounded">Ctrl+P</kbd> to search or jump to any page.</span>
+              </div>
+              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Creation</span>
+                <span className="text-xs text-[var(--text-primary)]">Type <kbd className="bg-white/10 px-1 rounded">/</kbd> inside any document for advanced blocks.</span>
+              </div>
+              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Intelligence</span>
+                <span className="text-xs text-[var(--text-primary)]">Use backlinks in the right panel to see neural connections.</span>
+              </div>
+              <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-white/5 flex flex-col items-start gap-2 group hover:border-[var(--electric-blue)] transition-all">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--electric-blue)]">Collaboration</span>
+                <span className="text-xs text-[var(--text-primary)]">Changes sync in real-time across all your neural nodes.</span>
+              </div>
+            </div>
           </div>
         )}
       </Layout>

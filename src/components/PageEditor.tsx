@@ -28,26 +28,8 @@ export const PageEditor: React.FC = () => {
   const loadingRef = useRef(false);
 
   useEffect(() => {
-    if (!init && !loadingRef.current) {
-      loadingRef.current = true;
-      loadGraph().then(async () => {
-        const state = useGraphStore.getState();
-        const pageIds = Object.keys(state.pages);
-        if (pageIds.length === 0) {
-          const p = await state.createPage('Welcome to MyNote 🧠');
-          state.setActivePage(p.id);
-          await state.addBlock(p.id, null, 0, 'Welcome! Type **/** to open the block menu', 'text');
-          await state.addBlock(p.id, null, 1, 'Press **Ctrl+K** to open the command palette', 'text');
-          await state.addBlock(p.id, null, 2, 'Use **[[Page Name]]** to create page links', 'text');
-          await state.addBlock(p.id, null, 3, 'Select text to see the formatting toolbar', 'callout');
-        } else if (!state.activePageId) {
-          state.setActivePage(pageIds[0]);
-        }
-        setInit(true);
-        loadingRef.current = false;
-      });
-    }
-  }, [init, loadGraph]);
+    setInit(true);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

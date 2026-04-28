@@ -10,6 +10,8 @@
   --glass-border: rgba(255, 255, 255, 0.06);
   --text-primary: #f0f0f5;
   --text-secondary: #94a3b8;
+  --accent-glow: rgba(91, 138, 245, 0.15);
+  --hover: rgba(255, 255, 255, 0.05);
   
   --bg: var(--obsidian-bg);
   --bg-2: var(--obsidian-surface);
@@ -18,6 +20,30 @@
   --text-1: var(--text-primary);
   --text-2: var(--text-secondary);
   --radius: 8px;
+}
+
+[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-2: #f8fafc;
+  --accent: #2563eb;
+  --border: #e2e8f0;
+  --text-1: #0f172a;
+  --text-2: #64748b;
+  --accent-glow: rgba(37, 99, 235, 0.1);
+  --hover: rgba(0, 0, 0, 0.04);
+  --glass-border: #e2e8f0;
+}
+
+[data-theme='cyberpunk'] {
+  --bg: #050505;
+  --bg-2: #0a0a0a;
+  --accent: #00ff41;
+  --border: rgba(0, 255, 65, 0.2);
+  --text-1: #00ff41;
+  --text-2: #008f11;
+  --accent-glow: rgba(0, 255, 65, 0.1);
+  --hover: rgba(0, 255, 65, 0.05);
+  --glass-border: rgba(0, 255, 65, 0.15);
 }
 
 .glass-blur {

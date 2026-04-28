@@ -39,6 +39,7 @@ function App() {
     trashOpen,
     journalOpen,
     tasksOpen,
+    theme,
     setCommandPaletteOpen 
   } = useUIStore();
   const [showAdmin, setShowAdmin] = useState(false);
@@ -52,6 +53,9 @@ function App() {
     initAuth();
   }, []); 
 
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
   useEffect(() => {
     let timeout: any;
     if (user?.id && profile?.is_approved) {

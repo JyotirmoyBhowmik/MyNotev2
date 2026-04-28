@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
-import { Search, Download, Layout, BookOpen, ChevronRight, Image, Paperclip } from 'lucide-react';
+import { 
+  Search, Download, Layout, BookOpen, ChevronRight, Image, Paperclip,
+  PanelLeft, PanelRight, Maximize2, Minimize2, Moon, Sun, Zap
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { PresenceBar } from './PresenceBar';
-import { PanelLeft, PanelRight, Maximize2, Minimize2 } from 'lucide-react';
 import './TopBar.css';
 import './PresenceBar.css';
 
@@ -27,7 +29,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
     isFocusMode,
     setFocusMode,
     isWideView,
-    toggleWideView
+    toggleWideView,
+    theme,
+    setTheme
   } = useUIStore();
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
@@ -230,6 +234,31 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
         >
           <BookOpen size={14} />
         </button>
+        
+        {/* Theme Switcher */}
+        <div className="flex items-center gap-1 border-l border-[var(--glass-border)] ml-1 pl-1">
+          <button 
+            className={`topbar-btn ${theme === 'dark' ? 'active' : ''}`}
+            onClick={() => setTheme('dark')}
+            title="Dark Theme"
+          >
+            <Moon size={13} />
+          </button>
+          <button 
+            className={`topbar-btn ${theme === 'light' ? 'active' : ''}`}
+            onClick={() => setTheme('light')}
+            title="Light Theme"
+          >
+            <Sun size={13} />
+          </button>
+          <button 
+            className={`topbar-btn ${theme === 'cyberpunk' ? 'active' : ''}`}
+            onClick={() => setTheme('cyberpunk')}
+            title="Cyberpunk Theme"
+          >
+            <Zap size={13} />
+          </button>
+        </div>
       </div>
 
       {/* Actions */}

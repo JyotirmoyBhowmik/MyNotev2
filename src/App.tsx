@@ -6,6 +6,8 @@ import { PendingApproval } from './components/PendingApproval';
 import { AdminPanel } from './components/AdminPanel';
 import { PasswordReset } from './components/PasswordReset';
 import { PageEditor } from './components/PageEditor';
+import { CommandPalette } from './components/CommandPalette';
+import { BlockMenu } from './components/BlockMenu';
 import { ContextMenu } from './components/ContextMenu';
 import { PageContextMenu } from './components/PageContextMenu';
 import { GraphView } from './components/GraphView';
@@ -32,8 +34,8 @@ function App() {
   const activePageId = useGraphStore(s => s.activePageId);
   const { 
     graphOpen, setGraphOpen, 
-    trashOpen, setTrashOpen,
-    journalOpen, setTasksOpen,
+    trashOpen,
+    journalOpen,
     setCommandPaletteOpen 
   } = useUIStore();
   const [showAdmin, setShowAdmin] = useState(false);
@@ -127,7 +129,7 @@ function App() {
         {trashOpen ? (
           <TrashView />
         ) : journalOpen ? (
-          <JournalView />
+          <JournalView onClose={() => useUIStore.getState().setJournalOpen(false)} />
         ) : activePageId ? (
           <PageEditor />
         ) : (

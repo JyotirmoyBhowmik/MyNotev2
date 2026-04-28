@@ -71,19 +71,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
 
       {/* Right Sidebar (Inspector / Tasks) */}
       <AnimatePresence>
-        {tasksOpen && (
-          <motion.aside
-            key="tasks"
-            initial={{ x: 400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="h-full w-96 min-w-[350px] flex-shrink-0 border-l border-[var(--glass-border)] glass-blur overflow-hidden relative z-40"
-          >
-            <TasksView />
-          </motion.aside>
-        )}
-        {isInspectorOpen && !tasksOpen && !isFocusMode && (
+        {isInspectorOpen && !isFocusMode && (
           <motion.aside
             key="inspector"
             initial={{ x: 300, opacity: 0 }}

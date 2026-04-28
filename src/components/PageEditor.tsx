@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
 import { useLinkStore } from '../store/linkStore';

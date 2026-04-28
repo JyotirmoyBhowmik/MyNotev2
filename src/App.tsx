@@ -38,6 +38,7 @@ function App() {
     graphOpen, setGraphOpen, 
     trashOpen,
     journalOpen,
+    tasksOpen,
     setCommandPaletteOpen 
   } = useUIStore();
   const [showAdmin, setShowAdmin] = useState(false);

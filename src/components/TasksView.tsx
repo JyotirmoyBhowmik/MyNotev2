@@ -10,8 +10,7 @@ export const TasksView: React.FC = () => {
 
   const allTasks = useMemo(() => {
     return Object.values(blocks).filter(b => 
-      b.block_type === 'task' || 
-      (b.block_type === 'text' && (b.content.includes('- [ ]') || b.content.includes('- [x]')))
+      b.block_type === ('text' as any) && (b.content.includes('- [ ]') || b.content.includes('- [x]'))
     ).map(b => {
       const isCompleted = b.content.includes('[x]');
       const cleanContent = b.content.replace(/- \[[x ]\]\s*/, '');

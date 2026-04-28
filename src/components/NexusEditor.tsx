@@ -203,7 +203,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
 
   useEffect(() => {
     return () => {
-      provider.destroy();
+      provider?.destroy();
       ydoc.destroy();
     }
   }, [provider, ydoc]);

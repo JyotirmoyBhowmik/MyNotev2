@@ -5,8 +5,12 @@ import { Layout } from './components/Layout';
 import { PendingApproval } from './components/PendingApproval';
 import { AdminPanel } from './components/AdminPanel';
 import { PasswordReset } from './components/PasswordReset';
-import { NexusEditor } from './components/NexusEditor';
+import { PageEditor } from './components/PageEditor';
+import { CommandPalette } from './components/CommandPalette';
+import { BlockMenu } from './components/BlockMenu';
+import { ContextMenu } from './components/ContextMenu';
 import { useGraphStore } from './store/graphStore';
+import { Toaster } from 'sonner';
 
 // ─── Clear stale auth error hashes from the URL ──────────────────────────────
 // e.g. #error=access_denied&error_code=otp_expired from expired magic links.
@@ -79,15 +83,24 @@ function App() {
 
 
   return (
-    <Layout>
-      {activePageId ? (
-        <NexusEditor pageId={activePageId} />
-      ) : (
-        <div className="flex h-full items-center justify-center text-[var(--text-secondary)] italic">
-          Select a page to start creating
-        </div>
-      )}
-    </Layout>
+    <div className="h-screen w-screen overflow-hidden">
+      <Layout>
+        {activePageId ? (
+          <PageEditor />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center text-[var(--text-secondary)] italic bg-[var(--obsidian-bg)]">
+            <div className="mb-4 text-4xl opacity-20">🧠</div>
+            Select a page or create a new one to start
+          </div>
+        )}
+      </Layout>
+
+      {/* Global Overlays */}
+      <CommandPalette onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />
+      <BlockMenu />
+      <ContextMenu />
+      <Toaster position="bottom-right" theme="dark" expand={false} richColors />
+    </div>
   );
 }
 

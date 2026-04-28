@@ -2,9 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useGraphStore } from '../store/graphStore';
 import { useUIStore } from '../store/uiStore';
 import { useLinkStore } from '../store/linkStore';
-import { BlockMenu } from './BlockMenu';
-import { CommandPalette } from './CommandPalette';
-import { ContextMenu } from './ContextMenu';
 import { JournalView } from './JournalView';
 import { TopBar } from './TopBar';
 import { TemplateModal } from './TemplateModal';
@@ -286,10 +283,6 @@ export const PageEditor: React.FC = () => {
 
 
 
-      {/* Overlays */}
-      <BlockMenu />
-      <CommandPalette onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />
-      <ContextMenu />
       {showTemplates && activePageId && (
         <TemplateModal 
           onClose={() => setShowTemplates(false)} 

@@ -21,8 +21,8 @@ export const Sidebar: React.FC = memo(() => {
   const { 
     pages, activePageId, setActivePage, createPage 
   } = useGraphStore();
-  const { signOut, user } = useAuthStore();
-  const { isFocusMode, setFocusMode } = useUIStore();
+  const { signOut, user, profile } = useAuthStore();
+  const { isFocusMode, setFocusMode, setJournalOpen, setCommandPaletteOpen } = useUIStore();
   
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
   const parentRef = useRef<HTMLDivElement>(null);
@@ -90,6 +90,7 @@ export const Sidebar: React.FC = memo(() => {
           <Search size={12} className="text-[var(--text-secondary)]" />
           <input 
             placeholder="Search pages..." 
+            onFocus={() => setCommandPaletteOpen(true)}
             className="bg-transparent text-xs outline-none w-full text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50"
           />
         </div>
@@ -97,10 +98,15 @@ export const Sidebar: React.FC = memo(() => {
 
       {/* Quick Actions */}
       <div className="flex flex-col gap-0.5 px-2 mb-4">
-        <button className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]">
+        <button 
+          onClick={() => setJournalOpen(true)}
+          className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]"
+        >
           <Calendar size={14} /> Journal
         </button>
-        <button className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]">
+        <button 
+          className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]"
+        >
           <Star size={14} /> Favorites
         </button>
       </div>
@@ -165,10 +171,16 @@ export const Sidebar: React.FC = memo(() => {
       <div className="p-4 border-t border-[var(--glass-border)] glass-blur">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[var(--electric-blue)] to-purple-500 flex-shrink-0 shadow-[0_0_10px_rgba(91,138,245,0.3)]" />
+            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[var(--electric-blue)] to-purple-500 flex-shrink-0 shadow-[0_0_10px_rgba(91,138,245,0.3)] flex items-center justify-center text-[10px] font-bold text-white">
+              {user?.email?.[0].toUpperCase()}
+            </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-[10px] font-bold truncate uppercase tracking-tight text-[var(--text-primary)]">{user?.email?.split('@')[0]}</span>
-              <span className="text-[9px] text-[var(--text-secondary)] truncate">Obsidian Pro Plan</span>
+              <span className="text-[10px] font-bold truncate uppercase tracking-tight text-[var(--text-primary)]">
+                {profile?.full_name || user?.email?.split('@')[0]}
+              </span>
+              <span className="text-[9px] text-[var(--text-secondary)] truncate">
+                {profile?.role === 'admin' ? 'Nexus Architect' : 'Obsidian Pro Plan'}
+              </span>
             </div>
           </div>
           <button onClick={() => signOut()} className="text-[var(--text-secondary)] hover:text-red-400 p-2 rounded-md hover:bg-red-500/10 transition-all">

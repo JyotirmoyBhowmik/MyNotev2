@@ -91,3 +91,12 @@
 .topbar-btn:hover { background: var(--hover); color: var(--text-1); }
 .topbar-btn.active { color: var(--accent); background: var(--accent-glow); }
 .topbar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+  .topbar-actions .topbar-btn:nth-child(n+4) {
+    display: none;
+  }
+  .topbar-layout-controls .topbar-btn:nth-child(n+3) {
+    display: none;
+  }
+}

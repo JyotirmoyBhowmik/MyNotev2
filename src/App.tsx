@@ -13,7 +13,7 @@ import { PageContextMenu } from './components/PageContextMenu';
 import { GraphView } from './components/GraphView';
 import { TrashView } from './components/TrashView';
 import { JournalView } from './components/JournalView';
-import { TasksView } from './components/TasksView';
+import { TaskAggregator } from './components/TaskAggregator';
 import { useUIStore } from './store/uiStore';
 import { useGraphStore } from './store/graphStore';
 import { NexusErrorBoundary } from './components/NexusErrorBoundary';
@@ -140,7 +140,7 @@ function App() {
         ) : journalOpen ? (
           <JournalView onClose={() => useUIStore.getState().setJournalOpen(false)} />
         ) : tasksOpen ? (
-          <TasksView />
+          <TaskAggregator />
         ) : activePageId ? (
           <PageEditor />
         ) : (

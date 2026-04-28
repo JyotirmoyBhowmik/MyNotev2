@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabase';
 import './PageEditor.css';
 
 export const PageEditor: React.FC = () => {
-  const { activePageId, pages, trash, blocks, loadGraph, loading, renamePage, favoritePage, updatePageIcon, restorePage, permanentlyDeletePage } = useGraphStore();
+  const { activePageId, pages, trash, blocks, loading, renamePage, favoritePage, updatePageIcon, restorePage, permanentlyDeletePage } = useGraphStore();
   const { setCommandPaletteOpen, isInspectorOpen, toggleInspector, viewMode, toggleViewMode, journalOpen, setJournalOpen } = useUIStore();
   const { backlinks } = useLinkStore();
 
@@ -24,8 +24,6 @@ export const PageEditor: React.FC = () => {
   const [splitView, setSplitView] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-
-  const loadingRef = useRef(false);
 
   useEffect(() => {
     setInit(true);

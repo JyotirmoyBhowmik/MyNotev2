@@ -15,6 +15,7 @@ import { TrashView } from './components/TrashView';
 import { JournalView } from './components/JournalView';
 import { useUIStore } from './store/uiStore';
 import { useGraphStore } from './store/graphStore';
+import { NexusErrorBoundary } from './components/NexusErrorBoundary';
 import { Toaster } from 'sonner';
 
 // ─── Clear stale auth error hashes from the URL ──────────────────────────────
@@ -125,7 +126,8 @@ function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden">
-      <Layout>
+      <NexusErrorBoundary>
+        <Layout>
         {trashOpen ? (
           <TrashView />
         ) : journalOpen ? (
@@ -171,6 +173,7 @@ function App() {
           </div>
         )}
       </Layout>
+    </NexusErrorBoundary>
 
       {/* Global Overlays */}
       <CommandPalette onNavigateToPage={(pid) => useGraphStore.getState().setActivePage(pid)} />

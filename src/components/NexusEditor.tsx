@@ -86,49 +86,71 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
   // v3.20 Plugin & Collab System
   const ydoc = useMemo(() => new Y.Doc(), [pageId]);
   
-  const provider = useMemo(() => new HocuspocusProvider({
-    url: 'ws://localhost:1234', // Local development default
-    name: `nexus-page-${pageId}`,
-    document: ydoc,
-    onConnect: () => console.log('[NexusCollab] Connected'),
-    onDisconnect: () => console.log('[NexusCollab] Disconnected'),
-  }), [pageId, ydoc]);
+  const provider = useMemo(() => {
+    // Only connect to localhost in development to avoid production CSP crashes
+    const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (!isDev) return null;
+
+    try {
+      return new HocuspocusProvider({
+        url: 'ws://localhost:1234',
+        name: `nexus-page-${pageId}`,
+        document: ydoc,
+        onConnect: () => console.log('[NexusCollab] Connected'),
+        onDisconnect: () => console.log('[NexusCollab] Disconnected'),
+      });
+    } catch (e) {
+      console.warn('[NexusCollab] Provider failed to initialize:', e);
+      return null;
+    }
+  }, [pageId, ydoc]);
   
-  const extensions = useMemo(() => [
-    StarterKit.configure({
-      codeBlock: false,
-      heading: { levels: [1, 2, 3] },
-    }),
-    Placeholder.configure({
-      placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
-    }),
-    Typography,
-    BlockReference,
-    Image.configure({ inline: false, allowBase64: false }),
-    TaskList,
-    TaskItem.configure({ nested: true }),
-    Table.configure({ resizable: true }),
-    TableRow,
-    TableHeader,
-    TableCell,
-    ...getRegisteredExtensions(),
-    Collaboration.configure({
-      document: ydoc,
-    }),
-    CollaborationCursor.configure({
-      render: (user: any) => {
-        const cursor = document.createElement('span')
-        cursor.classList.add('collaboration-cursor')
-        cursor.setAttribute('style', `border-color: ${user.color}`)
-        const label = document.createElement('div')
-        label.classList.add('collaboration-cursor-label')
-        label.setAttribute('style', `background-color: ${user.color}`)
-        label.innerText = user.name
-        cursor.appendChild(label)
-        return cursor
-      },
-    }),
-  ], [ydoc]);
+  const extensions = useMemo(() => {
+    const exts = [
+      StarterKit.configure({
+        codeBlock: false,
+        heading: { levels: [1, 2, 3] },
+      }),
+      Placeholder.configure({
+        placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
+      }),
+      Typography,
+      BlockReference,
+      Image.configure({ inline: false, allowBase64: false }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      ...getRegisteredExtensions(),
+      Collaboration.configure({
+        document: ydoc,
+      }),
+    ];
+
+    // Only add cursors if we have a provider
+    if (provider) {
+      exts.push(
+        CollaborationCursor.configure({
+          provider, // Pass the provider to cursors
+          render: (user: any) => {
+            const cursor = document.createElement('span')
+            cursor.classList.add('collaboration-cursor')
+            cursor.setAttribute('style', `border-color: ${user.color}`)
+            const label = document.createElement('div')
+            label.classList.add('collaboration-cursor-label')
+            label.setAttribute('style', `background-color: ${user.color}`)
+            label.innerText = user.name
+            cursor.appendChild(label)
+            return cursor
+          },
+        })
+      );
+    }
+
+    return exts;
+  }, [ydoc, provider]);
 
   const editorOptions = useMemo(() => ({
     extensions,

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { useLinkStore } from './linkStore';
@@ -101,7 +102,8 @@ interface GraphState {
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useGraphStore = create<GraphState>()(
-  transactionMiddleware((set, get) => ({
+  persist(
+    transactionMiddleware((set, get) => ({
     pages: {},
     blocks: {},
     activePageId: null,
@@ -198,7 +200,16 @@ export const useGraphStore = create<GraphState>()(
       }
     });
 
-    set({ pages, blocks, trash: { pages: trashPages, blocks: trashBlocks }, nexusBlockCache, loading: false });
+    const currentActive = get().activePageId;
+    const nextActive = currentActive && pages[currentActive] ? currentActive : (Object.keys(pages)[0] || null);
+
+    set({ 
+      pages, blocks, 
+      trash: { pages: trashPages, blocks: trashBlocks }, 
+      nexusBlockCache, 
+      loading: false,
+      activePageId: nextActive
+    });
     useLinkStore.getState().buildIndex(blocks, pages);
 
     // Realtime: Clean up existing subscription first to avoid "already subscribed" errors
@@ -761,7 +772,12 @@ export const useGraphStore = create<GraphState>()(
       );
       if (!nexusBlock) return s;
       return { blocks: { ...s.blocks, [nexusBlock.uuid]: { ...nexusBlock, content, _local_ts: Date.now() } } };
-    });
+    }
   },
-}))
+  {
+    name: 'nexus-graph-storage',
+    partialize: (state) => ({ activePageId: state.activePageId }),
+    version: 1
+  }
+)
 );

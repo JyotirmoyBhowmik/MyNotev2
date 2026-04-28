@@ -210,6 +210,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
     }
   }, [provider, ydoc]);
 
+  const { isWideView } = useUIStore();
   if (!pageId || !editor) return null
 
   return (
@@ -295,7 +296,7 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       )}
 
       <div className="nexus-editor-scroll">
-        <div className="nexus-editor-page">
+        <div className={`nexus-editor-page ${isWideView ? 'wide' : ''}`}>
           <EditorContent editor={editor} />
         </div>
       </div>

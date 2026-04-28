@@ -85,9 +85,14 @@
 }
 
 .nexus-editor-page {
-  max-width: 720px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 48px 48px 120px;
+  padding: 60px 60px 180px;
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nexus-editor-page.wide {
+  max-width: 1400px;
+  padding: 60px 40px 180px;
 }
 
 @media (max-width: 768px) {

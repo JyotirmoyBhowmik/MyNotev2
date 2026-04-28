@@ -25,7 +25,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
     isInspectorOpen, 
     toggleInspector,
     isFocusMode,
-    setFocusMode
+    setFocusMode,
+    isWideView,
+    toggleWideView
   } = useUIStore();
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
@@ -220,6 +222,13 @@ export const TopBar: React.FC<TopBarProps> = ({ onExport, onSplitView, splitView
           title="Toggle Inspector (Metadata)"
         >
           <PanelRight size={14} />
+        </button>
+        <button 
+          className={`topbar-btn ${isWideView ? 'active text-[var(--electric-blue)]' : ''}`} 
+          onClick={toggleWideView} 
+          title="Toggle Wide View (Full Canvas)"
+        >
+          <BookOpen size={14} />
         </button>
       </div>
 

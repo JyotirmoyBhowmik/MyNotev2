@@ -7,6 +7,7 @@ interface UIState {
   isSidebarOpen: boolean;
   isInspectorOpen: boolean;
   isFocusMode: boolean;
+  isWideView: boolean;
   
   // Menus & Overlays
   commandPaletteOpen: boolean;
@@ -42,6 +43,7 @@ interface UIState {
   setTrashOpen: (open: boolean) => void;
   setPageContextMenu: (menu: { x: number; y: number; pageId: string } | null) => void;
   toggleViewMode: () => void;
+  toggleWideView: () => void;
   toggleCollapsed: (blockId: string) => void;
 
   // Legacy Aliases for compatibility
@@ -69,6 +71,7 @@ export const useUIStore = create<UIState>()(
       graphOpen: false,
       trashOpen: false,
       viewMode: 'canvas',
+      isWideView: false,
       collapsedBlocks: {},
       pageContextMenu: null,
 
@@ -90,6 +93,7 @@ export const useUIStore = create<UIState>()(
       setTrashOpen: (open) => set({ trashOpen: open, graphOpen: false, tasksOpen: false, journalOpen: false }),
       setPageContextMenu: (menu) => set({ pageContextMenu: menu }),
       toggleViewMode: () => set((s) => ({ viewMode: s.viewMode === 'canvas' ? 'list' : 'canvas' })),
+      toggleWideView: () => set((s) => ({ isWideView: !s.isWideView })),
       toggleCollapsed: (blockId) => set((s) => ({
         collapsedBlocks: { ...s.collapsedBlocks, [blockId]: !s.collapsedBlocks[blockId] }
       })),
@@ -105,6 +109,7 @@ export const useUIStore = create<UIState>()(
         isSidebarOpen: state.isSidebarOpen,
         isInspectorOpen: state.isInspectorOpen,
         viewMode: state.viewMode,
+        isWideView: state.isWideView,
         journalOpen: state.journalOpen,
         collapsedBlocks: state.collapsedBlocks
       }),

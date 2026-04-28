@@ -4,6 +4,7 @@ import { useUIStore } from '../store/uiStore';
 import { useResizable } from '../hooks/useResizable';
 import { Sidebar } from './Sidebar';
 import { Inspector } from './Inspector';
+import { TaskAggregator } from './TaskAggregator';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,7 +17,8 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
     isFocusMode, 
     sidebarWidth, 
     setSidebarWidth,
-    toggleInspector 
+    toggleInspector,
+    tasksOpen 
   } = useUIStore();
 
   const { width, startResizing } = useResizable({
@@ -68,9 +70,21 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
       </main>
 
       {/* Right Sidebar (Inspector) */}
-      <AnimatePresence>
-        {isInspectorOpen && !isFocusMode && (
+      <AnimatePresence mode="wait">
+        {tasksOpen ? (
           <motion.aside
+            key="tasks"
+            initial={{ x: 400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 400, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="h-full w-96 min-w-[350px] flex-shrink-0 border-l border-[var(--glass-border)] glass-blur overflow-hidden relative z-40"
+          >
+            <TaskAggregator />
+          </motion.aside>
+        ) : isInspectorOpen && !isFocusMode ? (
+          <motion.aside
+            key="inspector"
             initial={{ x: 300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 300, opacity: 0 }}
@@ -79,7 +93,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
           >
             <Inspector />
           </motion.aside>
-        )}
+        ) : null}
       </AnimatePresence>
 
       {/* Safe Area Insets (Mobile) */}

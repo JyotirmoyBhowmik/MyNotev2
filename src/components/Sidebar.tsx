@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, memo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { 
   FileText, Plus, Star, Calendar, Search, 
-  ChevronRight, ChevronDown, LogOut, Command
+  ChevronRight, ChevronDown, LogOut, Command, CheckCircle
 } from 'lucide-react';
 import { useGraphStore, type Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
@@ -22,7 +22,7 @@ export const Sidebar: React.FC = memo(() => {
     pages, activePageId, setActivePage, createPage 
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
-  const { isFocusMode, setFocusMode, setJournalOpen, setCommandPaletteOpen } = useUIStore();
+  const { isFocusMode, setFocusMode, setJournalOpen, setCommandPaletteOpen, setTasksOpen } = useUIStore();
   
   const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
   const parentRef = useRef<HTMLDivElement>(null);
@@ -106,8 +106,9 @@ export const Sidebar: React.FC = memo(() => {
         </button>
         <button 
           className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all group border-l-[1px] border-transparent hover:border-[var(--electric-blue)]"
+          onClick={() => setTasksOpen(true)}
         >
-          <Star size={14} /> Favorites
+          <CheckCircle size={14} /> Tasks
         </button>
       </div>
 

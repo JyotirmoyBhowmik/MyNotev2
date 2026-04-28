@@ -16,9 +16,8 @@ interface UIState {
   contextMenu: { x: number; y: number; blockId: string } | null;
   
   // State
-  journalOpen: boolean;
-  viewMode: 'canvas' | 'list';
   collapsedBlocks: Record<string, boolean>;
+  tasksOpen: boolean;
 
   // Actions
   setSidebarWidth: (width: number) => void;
@@ -33,6 +32,7 @@ interface UIState {
   setContextMenu: (menu: { x: number; y: number; blockId: string } | null) => void;
   
   setJournalOpen: (open: boolean) => void;
+  setTasksOpen: (open: boolean) => void;
   toggleViewMode: () => void;
   toggleCollapsed: (blockId: string) => void;
 
@@ -57,6 +57,7 @@ export const useUIStore = create<UIState>()(
       contextMenu: null,
       
       journalOpen: false,
+      tasksOpen: false,
       viewMode: 'canvas',
       collapsedBlocks: {},
 
@@ -72,7 +73,8 @@ export const useUIStore = create<UIState>()(
       setSlashQuery: (query) => set({ slashQuery: query }),
       setContextMenu: (menu) => set({ contextMenu: menu }),
       
-      setJournalOpen: (open) => set({ journalOpen: open }),
+      setJournalOpen: (open) => set({ journalOpen: open, tasksOpen: false }),
+      setTasksOpen: (open) => set({ tasksOpen: open, journalOpen: false }),
       toggleViewMode: () => set((s) => ({ viewMode: s.viewMode === 'canvas' ? 'list' : 'canvas' })),
       toggleCollapsed: (blockId) => set((s) => ({
         collapsedBlocks: { ...s.collapsedBlocks, [blockId]: !s.collapsedBlocks[blockId] }

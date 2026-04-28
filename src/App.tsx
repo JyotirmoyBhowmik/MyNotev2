@@ -51,10 +51,10 @@ function App() {
   }, []); 
 
   useEffect(() => {
-    if (user && profile?.is_approved) {
+    if (user?.id && profile?.is_approved) {
       loadGraph();
     }
-  }, [user, profile, loadGraph]);
+  }, [user?.id, profile?.is_approved, loadGraph]);
 
   // Safety check for activePageId
   useEffect(() => {

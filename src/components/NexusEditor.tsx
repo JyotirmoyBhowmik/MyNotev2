@@ -54,10 +54,12 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
 
   const buildInitialContent = useCallback(() => {
     const store = useGraphStore.getState()
+    if (!store || !store.blocks) return '<p></p>';
+    
     const nexusBlock = Object.values(store.blocks).find(
-      b => b.page_id === pageId && b.block_type === 'nexus_html'
+      b => b && b.page_id === pageId && b.block_type === 'nexus_html'
     )
-    if (nexusBlock) return nexusBlock.content
+    if (nexusBlock) return nexusBlock.content || '<p></p>';
 
     const page = store.pages[pageId]
     if (!page) return '<p></p>'

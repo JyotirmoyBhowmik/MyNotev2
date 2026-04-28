@@ -137,13 +137,15 @@ export const useGraphStore = create<GraphState>()(
       set({ ...nextState, undoStack: [...undoStack, currentState], redoStack: nextRedo });
     },
 
-  loadGraph: async () => {
-    if (get().loading && Object.keys(get().pages).length > 0) return; // Already loading
-    
-    console.log('[GraphStore] loadGraph v2.6 init (BUILD SUCCESS)');
-    const user = useAuthStore.getState().user;
-    if (!user) return;
-    set({ loading: true });
+    loadGraph: async () => {
+      // Prevent multiple concurrent loads
+      if (get().loading && Object.keys(get().pages).length > 0) return;
+      
+      const user = useAuthStore.getState().user;
+      if (!user) return;
+      
+      console.log('[GraphStore] loadGraph v2.6 init (BUILD SUCCESS)');
+      set({ loading: true });
 
     const [{ data: cloudPages, error: pErr }, { data: cloudBlocks, error: bErr }] = await Promise.all([
       supabase.from('pages').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),

@@ -44,6 +44,15 @@ function App() {
     }
   }, [user, profile, loadGraph]);
 
+  // Safety check for activePageId
+  useEffect(() => {
+    const state = useGraphStore.getState();
+    if (activePageId && !state.pages[activePageId] && !loading) {
+      // Page might not be loaded yet or deleted
+      // Wait for loadGraph to finish before clearing
+    }
+  }, [activePageId, loading]);
+
   if (loading) {
     return (
       <div style={{

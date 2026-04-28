@@ -96,6 +96,7 @@ export const useUIStore = create<UIState>()(
         journalOpen: state.journalOpen,
         collapsedBlocks: state.collapsedBlocks
       }),
+      version: 1, 
     }
   )
 );

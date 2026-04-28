@@ -11,6 +11,7 @@ export const TaskAggregator: React.FC = () => {
   // Aggregate all tasks (Kanban items and checklist items)
   const allTasks = useMemo(() => {
     const tasks: any[] = [];
+    if (!blocks || !pages) return tasks;
     
     Object.values(blocks).forEach(block => {
       if (block.deleted_at) return;

@@ -69,9 +69,9 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
         {children}
       </main>
 
-      {/* Right Sidebar (Inspector) */}
-      <AnimatePresence mode="wait">
-        {tasksOpen ? (
+      {/* Right Sidebar (Inspector / Tasks) */}
+      <AnimatePresence>
+        {tasksOpen && (
           <motion.aside
             key="tasks"
             initial={{ x: 400, opacity: 0 }}
@@ -82,7 +82,8 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
           >
             <TaskAggregator />
           </motion.aside>
-        ) : isInspectorOpen && !isFocusMode ? (
+        )}
+        {isInspectorOpen && !tasksOpen && !isFocusMode && (
           <motion.aside
             key="inspector"
             initial={{ x: 300, opacity: 0 }}
@@ -93,7 +94,7 @@ export const Layout: React.FC<LayoutProps> = memo(({ children }) => {
           >
             <Inspector />
           </motion.aside>
-        ) : null}
+        )}
       </AnimatePresence>
 
       {/* Safe Area Insets (Mobile) */}

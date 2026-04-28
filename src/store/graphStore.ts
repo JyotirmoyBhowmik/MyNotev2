@@ -772,12 +772,13 @@ export const useGraphStore = create<GraphState>()(
       );
       if (!nexusBlock) return s;
       return { blocks: { ...s.blocks, [nexusBlock.uuid]: { ...nexusBlock, content, _local_ts: Date.now() } } };
-    }
+    });
   },
-  {
-    name: 'nexus-graph-storage',
-    partialize: (state) => ({ activePageId: state.activePageId }),
-    version: 1
-  }
+})),
+{
+  name: 'nexus-graph-storage',
+  partialize: (state: any) => ({ activePageId: state.activePageId }),
+  version: 1
+}
 )
 );

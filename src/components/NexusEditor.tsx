@@ -9,6 +9,8 @@ import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { lowlight } from '../lib/lowlight'
 import { useState, useCallback, useEffect, useRef, memo, useMemo } from 'react'
 import { useGraphStore } from '../store/graphStore'
 import { useUIStore } from '../store/uiStore'
@@ -113,6 +115,9 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       StarterKit.configure({
         codeBlock: false,
         heading: { levels: [1, 2, 3] },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
       }),
       Placeholder.configure({
         placeholder: "Type '/' for commands, or just start writing, or (( to link a block...",
@@ -230,6 +235,9 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
             </ToolbarBtn>
             <ToolbarBtn onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')} title="Inline code">
               <Code size={14} />
+            </ToolbarBtn>
+            <ToolbarBtn onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="JS Block (Code Block)">
+              <Layout size={14} className="rotate-90" />
             </ToolbarBtn>
             <ToolbarBtn onClick={() => {
               const url = prompt('URL:')

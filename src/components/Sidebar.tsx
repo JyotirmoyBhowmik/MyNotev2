@@ -3,8 +3,9 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { 
   FileText, Plus, Calendar, Search, 
   ChevronRight, ChevronDown, LogOut, Command, CheckCircle,
-  Trash2, Network
+  Trash2, Network, FolderPlus
 } from 'lucide-react';
+import { useDrag, useDrop } from 'react-dnd';
 import { useGraphStore, type Page } from '../store/graphStore';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
@@ -20,7 +21,7 @@ interface PageNode extends Page {
 // ─── COMPONENT ─────────────────────────────────────────────────────────────
 export const Sidebar: React.FC = memo(() => {
   const { 
-    pages, activePageId, setActivePage, createPage 
+    pages, activePageId, setActivePage, createPage, createFolder, movePage
   } = useGraphStore();
   const { signOut, user, profile } = useAuthStore();
   const { 
@@ -75,6 +76,20 @@ export const Sidebar: React.FC = memo(() => {
     const title = prompt('Page title:');
     if (title) await createPage(title, 'normal', null);
   };
+
+  const handleNewFolder = async () => {
+    const title = prompt('Folder title:');
+    if (title) await createFolder(title, null);
+  };
+
+  const [, dropZone] = useDrop({
+    accept: 'SIDEBAR_ITEM',
+    drop: (item: { id: string }, monitor) => {
+      if (monitor.didDrop()) return;
+      // Dropped on the sidebar root
+      movePage(item.id, null);
+    }
+  });
 
   return (
     <div className="flex h-full flex-col bg-[var(--obsidian-surface)] border-r border-[var(--glass-border)]">
@@ -131,9 +146,15 @@ export const Sidebar: React.FC = memo(() => {
 
       {/* Page Tree (Virtualized) */}
       <div className="flex-1 overflow-y-auto px-2 custom-scrollbar" ref={parentRef}>
-        <div className="flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+        <div 
+          ref={dropZone as any}
+          className="flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]"
+        >
           <span>Documents</span>
-          <button onClick={handleNewPage} className="hover:text-white transition-colors"><Plus size={14} /></button>
+          <div className="flex items-center gap-2">
+            <button onClick={handleNewFolder} title="New Folder" className="hover:text-white transition-colors"><FolderPlus size={14} /></button>
+            <button onClick={handleNewPage} title="New Page" className="hover:text-white transition-colors"><Plus size={14} /></button>
+          </div>
         </div>
 
         <div
@@ -148,24 +169,13 @@ export const Sidebar: React.FC = memo(() => {
             const isActive = activePageId === node.id;
 
             return (
-              <div
+              <DraggableSidebarItem
                 key={node.id}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                  paddingLeft: `${node.depth * 12 + 8}px`
-                }}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-1 cursor-pointer transition-all border-l-[1px]",
-                  isActive 
-                    ? "bg-white/10 text-white border-[var(--electric-blue)]" 
-                    : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-white border-transparent hover:border-[var(--electric-blue)]"
-                )}
-                onClick={() => {
+                node={node}
+                virtualRow={virtualRow}
+                isActive={isActive}
+                onToggleExpand={toggleExpand}
+                onSelect={() => {
                   setActivePage(node.id);
                   setJournalOpen(false);
                   setGraphOpen(false);
@@ -176,20 +186,8 @@ export const Sidebar: React.FC = memo(() => {
                   e.preventDefault();
                   setPageContextMenu({ x: e.clientX, y: e.clientY, pageId: node.id });
                 }}
-              >
-                <div 
-                  onClick={(e) => toggleExpand(node.id, e)}
-                  className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                >
-                  {node.hasChildren ? (
-                    node.isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />
-                  ) : <div className="w-3" />}
-                </div>
-                <div className="text-sm opacity-70">
-                  {node.icon || (node.type === 'folder' ? '📁' : <FileText size={12} />)}
-                </div>
-                <span className="truncate text-xs tracking-tight font-medium">{node.title}</span>
-              </div>
+                movePage={movePage}
+              />
             );
           })}
         </div>
@@ -221,3 +219,81 @@ export const Sidebar: React.FC = memo(() => {
 });
 
 Sidebar.displayName = 'Sidebar';
+
+interface DraggableSidebarItemProps {
+  node: PageNode;
+  virtualRow: any;
+  isActive: boolean;
+  onToggleExpand: (id: string, e: React.MouseEvent) => void;
+  onSelect: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
+  movePage: (id: string, parentId: string | null) => void;
+}
+
+const DraggableSidebarItem: React.FC<DraggableSidebarItemProps> = ({
+  node, virtualRow, isActive, onToggleExpand, onSelect, onContextMenu, movePage
+}) => {
+  const [{ isDragging }, dragRef] = useDrag({
+    type: 'SIDEBAR_ITEM',
+    item: { id: node.id, type: node.type },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging()
+    })
+  });
+
+  const [{ isOver }, dropRef] = useDrop({
+    accept: 'SIDEBAR_ITEM',
+    drop: (item: { id: string, type: string }) => {
+      if (item.id === node.id) return;
+      if (node.type === 'folder') {
+        movePage(item.id, node.id);
+      } else {
+        movePage(item.id, node.parent_page_id);
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver({ shallow: true })
+    })
+  });
+
+  return (
+    <div
+      ref={(el) => {
+        dragRef(el);
+        dropRef(el);
+      }}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: `${virtualRow.size}px`,
+        transform: `translateY(${virtualRow.start}px)`,
+        paddingLeft: `${node.depth * 12 + 8}px`,
+        opacity: isDragging ? 0.4 : 1
+      }}
+      className={cn(
+        'flex items-center gap-2 rounded-md px-2 py-1 cursor-pointer transition-all border-l-[1px]',
+        isActive 
+          ? 'bg-white/10 text-white border-[var(--electric-blue)]' 
+          : 'text-[var(--text-secondary)] hover:bg-white/5 hover:text-white border-transparent hover:border-[var(--electric-blue)]',
+        isOver && node.type === 'folder' ? 'bg-[var(--electric-blue)]/20' : ''
+      )}
+      onClick={onSelect}
+      onContextMenu={onContextMenu}
+    >
+      <div 
+        onClick={(e) => onToggleExpand(node.id, e)}
+        className="p-0.5 hover:bg-white/10 rounded transition-colors"
+      >
+        {node.hasChildren ? (
+          node.isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />
+        ) : <div className="w-3" />}
+      </div>
+      <div className="text-sm opacity-70">
+        {node.icon || (node.type === 'folder' ? '📁' : <FileText size={12} />)}
+      </div>
+      <span className="truncate text-xs tracking-tight font-medium">{node.title}</span>
+    </div>
+  );
+};

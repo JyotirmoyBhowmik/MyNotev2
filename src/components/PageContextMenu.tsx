@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useUIStore } from '../store/uiStore';
 import { useGraphStore } from '../store/graphStore';
-import { Trash2, Edit3, Star } from 'lucide-react';
+import { Trash2, Edit3, Star, Plus, FolderPlus } from 'lucide-react';
 import './ContextMenu.css';
 
 export const PageContextMenu: React.FC = () => {
   const { pageContextMenu, setPageContextMenu } = useUIStore();
-  const { deletePage, favoritePage, renamePage, pages } = useGraphStore();
+  const { deletePage, favoritePage, renamePage, createPage, createFolder, pages } = useGraphStore();
 
   useEffect(() => {
     const close = () => setPageContextMenu(null);
@@ -46,6 +46,28 @@ export const PageContextMenu: React.FC = () => {
       </button>
 
       <div className="context-divider" />
+
+      {page.type === 'folder' && (
+        <>
+          <button className="context-item" onClick={async () => {
+            const newTitle = prompt('New Sub-page title:');
+            if (newTitle) await createPage(newTitle, 'normal', pageId);
+            setPageContextMenu(null);
+          }}>
+            <Plus size={12} /> New Sub-page
+          </button>
+          
+          <button className="context-item" onClick={async () => {
+            const newTitle = prompt('New Sub-folder title:');
+            if (newTitle) await createFolder(newTitle, pageId);
+            setPageContextMenu(null);
+          }}>
+            <FolderPlus size={12} /> New Sub-folder
+          </button>
+
+          <div className="context-divider" />
+        </>
+      )}
 
       <button className="context-item danger" onClick={async () => {
         if (confirm(`Delete "${page.title}"?`)) {

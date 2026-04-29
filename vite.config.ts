@@ -11,5 +11,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    dedupe: ['react-dnd', 'react-dnd-html5-backend', 'dnd-core'],
   },
 })

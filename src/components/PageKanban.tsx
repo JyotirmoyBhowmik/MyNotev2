@@ -13,7 +13,7 @@ export const PageKanban: React.FC<KanbanViewProps> = ({ pageId }) => {
   const page = pages[pageId];
   if (!page) return null;
 
-  const columns = page.root_blocks.map(id => blocks[id]).filter(Boolean);
+  const columns = (page.root_blocks || []).map(id => blocks[id]).filter(Boolean);
 
   const handleAddColumn = async () => {
     const title = prompt('Column Name:');
@@ -75,7 +75,7 @@ const KanbanColumn: React.FC<{ column: any; pageId: string }> = ({ column, pageI
       </div>
       
       <div className="kanban-items">
-        {column.children.map((itemUuid: string) => (
+        {(column.children || []).map((itemUuid: string) => (
           <KanbanItem 
             key={itemUuid} 
             itemId={itemUuid} 

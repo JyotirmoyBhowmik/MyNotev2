@@ -115,6 +115,8 @@ export const NexusEditor: React.FC<NexusEditorProps> = ({ pageId, readOnly = fal
       StarterKit.configure({
         codeBlock: false,
         heading: { levels: [1, 2, 3] },
+        // @ts-expect-error: Tiptap types missing history toggle
+        history: false,
       }),
       CodeBlockLowlight.configure({
         lowlight,

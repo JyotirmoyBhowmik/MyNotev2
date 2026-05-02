@@ -8,13 +8,13 @@ export const KanbanCardSchema = z.object({
 
 export const KanbanColumnSchema = z.object({
   id: z.string(),
-  title: z.string(),
-  cardIds: z.array(z.string()),
+  title: z.string().default(''),
+  cardIds: z.array(z.string()).default([]).catch([]),
 });
 
 export const KanbanBoardDataSchema = z.object({
-  columns: z.array(KanbanColumnSchema),
-  cards: z.record(z.string(), KanbanCardSchema),
+  columns: z.array(KanbanColumnSchema).default([]).catch([]),
+  cards: z.record(z.string(), KanbanCardSchema).default({}).catch({}),
 });
 
 export const BlockSchema = z.object({

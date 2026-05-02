@@ -15,8 +15,9 @@ import type { NexusPlugin } from '../../types/plugin';
 import { NexusErrorBoundary } from '../../components/NexusErrorBoundary';
 import { KanbanBoardDataSchema } from '../../lib/schemas';
 import type { KanbanBoardData, KanbanCard } from '../../lib/schemas';
+import { v4 as uuidv4 } from 'uuid';
 
-const generateId = () => `id-${Math.random().toString(36).substr(2, 9)}`;
+const generateId = () => uuidv4();
 
 // ─── COMPONENTS ────────────────────────────────────────────────────────────
 const SortableCard = ({ card, onDelete, onEdit }: { card: KanbanCard; onDelete: () => void; onEdit: (val: string) => void }) => {

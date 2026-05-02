@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const KanbanCardSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   content: z.string(),
   priority: z.enum(['low', 'med', 'high']).default('med'),
 });
@@ -9,12 +9,12 @@ export const KanbanCardSchema = z.object({
 export const KanbanColumnSchema = z.object({
   id: z.string(),
   title: z.string(),
-  cardIds: z.array(z.string().uuid()),
+  cardIds: z.array(z.string()),
 });
 
 export const KanbanBoardDataSchema = z.object({
   columns: z.array(KanbanColumnSchema),
-  cards: z.record(z.string().uuid(), KanbanCardSchema),
+  cards: z.record(z.string(), KanbanCardSchema),
 });
 
 export const BlockSchema = z.object({

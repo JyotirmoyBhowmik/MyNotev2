@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import { Settings, Info, History, Share2, Tag, Link } from 'lucide-react';
 import { useGraphStore } from '../store/graphStore';
 import { BacklinksPanel } from './BacklinksPanel';
+import { AttachmentsPanel } from './AttachmentsPanel';
+import { Paperclip } from 'lucide-react';
 
 export const Inspector: React.FC = memo(() => {
   const activePageId = useGraphStore(s => s.activePageId);
@@ -29,6 +31,15 @@ export const Inspector: React.FC = memo(() => {
           </h3>
           <div className="rounded-lg border border-[var(--glass-border)] bg-white/5 overflow-hidden">
             <BacklinksPanel pageId={activePageId || ''} />
+          </div>
+        </section>
+
+        <section className="flex-1 overflow-y-auto min-h-0">
+          <h3 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[var(--electric-blue)] sticky top-0 bg-[var(--obsidian-surface)] z-10 py-1">
+            <Paperclip size={12} /> Page Attachments
+          </h3>
+          <div className="rounded-lg border border-[var(--glass-border)] bg-white/5 overflow-hidden">
+            <AttachmentsPanel pageId={activePageId || ''} />
           </div>
         </section>
 

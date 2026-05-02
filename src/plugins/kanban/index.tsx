@@ -62,8 +62,9 @@ const SortableColumn = ({ column, cards, onAddCard, onUpdateColumn, onDeleteColu
 };
 
 const KanbanBoardComponent = ({ node, updateAttributes, deleteNode }: any) => {
-  const [data, setData] = useState<KanbanBoardData>(node.attrs.boardData);
+  const [data, setData] = useState<KanbanBoardData>(node.attrs.boardData || { columns: [], cards: {} });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const safeColumns = data?.columns || [];
 
   const sync = (newData: KanbanBoardData) => {
     const validated = KanbanBoardDataSchema.parse(newData);
@@ -79,29 +80,29 @@ const KanbanBoardComponent = ({ node, updateAttributes, deleteNode }: any) => {
 
     if (active.data.current.type === 'column' && over.data.current.type === 'column') {
       if (activeId !== overId) {
-        const oldIndex = data.columns.findIndex(c => c.id === activeId);
-        const newIndex = data.columns.findIndex(c => c.id === overId);
-        sync({ ...data, columns: arrayMove(data.columns, oldIndex, newIndex) });
+        const oldIndex = safeColumns.findIndex(c => c.id === activeId);
+        const newIndex = safeColumns.findIndex(c => c.id === overId);
+        sync({ ...data, columns: arrayMove(safeColumns, oldIndex, newIndex) });
       }
       return;
     }
 
     if (active.data.current.type === 'card') {
-      const sourceCol = data.columns.find(c => c.cardIds.includes(activeId));
-      let targetCol = over.data.current.type === 'column' ? over.data.current.column : data.columns.find(c => c.cardIds.includes(overId));
+      const sourceCol = safeColumns.find(c => (c.cardIds || []).includes(activeId));
+      let targetCol = over.data.current.type === 'column' ? over.data.current.column : safeColumns.find(c => (c.cardIds || []).includes(overId));
       if (!sourceCol || !targetCol) return;
 
       if (sourceCol.id === targetCol.id) {
-        const newCardIds = arrayMove(sourceCol.cardIds, sourceCol.cardIds.indexOf(activeId), targetCol.cardIds.indexOf(overId));
-        sync({ ...data, columns: data.columns.map(c => c.id === sourceCol.id ? { ...c, cardIds: newCardIds } : c) });
+        const newCardIds = arrayMove(sourceCol.cardIds || [], (sourceCol.cardIds || []).indexOf(activeId), (targetCol.cardIds || []).indexOf(overId));
+        sync({ ...data, columns: safeColumns.map(c => c.id === sourceCol.id ? { ...c, cardIds: newCardIds } : c) });
       } else {
         sync({
           ...data,
-          columns: data.columns.map(c => {
-            if (c.id === sourceCol.id) return { ...c, cardIds: c.cardIds.filter(id => id !== activeId) };
+          columns: safeColumns.map(c => {
+            if (c.id === sourceCol.id) return { ...c, cardIds: (c.cardIds || []).filter(id => id !== activeId) };
             if (c.id === targetCol.id) {
-              const newIds = [...c.cardIds];
-              const idx = over.data.current.type === 'card' ? c.cardIds.indexOf(overId) : c.cardIds.length;
+              const newIds = [...(c.cardIds || [])];
+              const idx = over.data.current.type === 'card' ? (c.cardIds || []).indexOf(overId) : (c.cardIds || []).length;
               newIds.splice(idx, 0, activeId);
               return { ...c, cardIds: newIds };
             }
@@ -121,13 +122,13 @@ const KanbanBoardComponent = ({ node, updateAttributes, deleteNode }: any) => {
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
-            <SortableContext items={data.columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
-              {data.columns.map(col => <SortableColumn key={col.id} column={col} cards={data.cards} onAddCard={() => {
+            <SortableContext items={safeColumns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
+              {safeColumns.map(col => <SortableColumn key={col.id} column={col} cards={data.cards || {}} onAddCard={() => {
                 const id = generateId();
-                sync({ ...data, cards: { ...data.cards, [id]: { id, content: 'New Task', priority: 'med' } }, columns: data.columns.map(c => c.id === col.id ? { ...c, cardIds: [...c.cardIds, id] } : c) });
-              }} onUpdateColumn={(u: any) => sync({ ...data, columns: data.columns.map(c => c.id === col.id ? u : c) })} onDeleteColumn={() => sync({ ...data, columns: data.columns.filter(c => c.id !== col.id) })} onUpdateCard={(cid: string, u: any) => sync({ ...data, cards: { ...data.cards, [cid]: { ...data.cards[cid], ...u } } })} onDeleteCard={(cid: string) => sync({ ...data, cards: Object.fromEntries(Object.entries(data.cards).filter(([k]) => k !== cid)), columns: data.columns.map(c => ({ ...c, cardIds: c.cardIds.filter(id => id !== cid) })) })} />)}
+                sync({ ...data, cards: { ...(data.cards || {}), [id]: { id, content: 'New Task', priority: 'med' } }, columns: safeColumns.map(c => c.id === col.id ? { ...c, cardIds: [...(c.cardIds || []), id] } : c) });
+              }} onUpdateColumn={(u: any) => sync({ ...data, columns: safeColumns.map(c => c.id === col.id ? u : c) })} onDeleteColumn={() => sync({ ...data, columns: safeColumns.filter(c => c.id !== col.id) })} onUpdateCard={(cid: string, u: any) => sync({ ...data, cards: { ...(data.cards || {}), [cid]: { ...(data.cards || {})[cid], ...u } } })} onDeleteCard={(cid: string) => sync({ ...data, cards: Object.fromEntries(Object.entries(data.cards || {}).filter(([k]) => k !== cid)), columns: safeColumns.map(c => ({ ...c, cardIds: (c.cardIds || []).filter(id => id !== cid) })) })} />)}
             </SortableContext>
-            <button onClick={() => sync({ ...data, columns: [...data.columns, { id: generateId(), title: 'New Column', cardIds: [] }] })} className="flex h-fit min-h-[150px] w-72 min-w-[280px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/5 text-white/20 hover:border-blue-500/50 hover:text-blue-500"><Plus size={24} /><span className="text-sm font-bold">Add Column</span></button>
+            <button onClick={() => sync({ ...data, columns: [...safeColumns, { id: generateId(), title: 'New Column', cardIds: [] }] })} className="flex h-fit min-h-[150px] w-72 min-w-[280px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/5 text-white/20 hover:border-blue-500/50 hover:text-blue-500"><Plus size={24} /><span className="text-sm font-bold">Add Column</span></button>
           </div>
         </DndContext>
       </NexusErrorBoundary>
